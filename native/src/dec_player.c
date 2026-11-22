@@ -258,6 +258,9 @@ static void cap_add(const uint8_t *au, unsigned size)
     cap_aus++; cap_bytes += size;
 }
 
+/* the AA window on the cluster display (x y w h) while dec_run plays: what nav_app.c samples */
+static volatile unsigned dec_win[4];
+
 static void dec_run(void)
 {
     char cfg[64], url[360], *o;
@@ -288,6 +291,7 @@ static void dec_run(void)
             avc1 = dec_has_avc1(cfg); junction = dec_has_word(cfg, "junction");
         }
     }
+    dec_win[0] = r[0]; dec_win[1] = r[1]; dec_win[2] = r[2]; dec_win[3] = r[3];
     if (!dec_resolve()) return;
     if (!dec_tt) { void *hc = dlopen("libc.so.3", RTLD_LAZY); if (hc) dec_tt = (timer_timeout_t)dlsym(hc, "TimerTimeout"); }
     if (!dec_tt) LOG("dec: TimerTimeout not found, sends may block");

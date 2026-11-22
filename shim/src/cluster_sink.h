@@ -263,7 +263,7 @@ struct ClusterProbe {
   u32 sessionId, setupCodec, lastOtherId, bytes, maxAu, lastTsHi, lastTsLo, sent, sendFail;
   u32 cfgLen, prefixCount, spsCropped, focusChanges, bindReplies, bindReqLen, inputsSent, cmdSeq;
   u32 insetsFile, insets[4], cmdReads, cmdBytes, cmdLines, decodeMode, fullFrame;
-  u32 turnData, liveSent, live[4], liveBad;
+  u32 turnData, liveSent, live[4], liveBad, appSent;
   u32 idrSoft, idrCycle, secondIdr, ackConsumed, ackTimeouts, focusGated, dhu;
   u32 startIdrMs[4], startIdrN;   // ms from each Start to its first IDR (newest in [startIdrN-1&3])
   u8  bindReq[32];
@@ -532,7 +532,7 @@ static void cluster_flush(){
   cl_pv(o," field_display_type=",CLUSTER_FIELD_DISPLAY_TYPE);
   cl_pv(o," display_type=",CLUSTER_DISPLAY_TYPE);
   cl_pv(o," resolution=",g_geo.res); cl_pv(o," decode_mode=",g_geo.decode); cl_pv(o," full_frame=",g_cl.fullFrame); cl_pv(o," turn_data=",g_cl.turnData);
-  cl_pv(o," live_sent=",g_cl.liveSent); cl_pv(o," live_bad=",g_cl.liveBad);
+  cl_pv(o," live_sent=",g_cl.liveSent); cl_pv(o," live_bad=",g_cl.liveBad); cl_pv(o," app_sent=",g_cl.appSent);
   cl_pv(o," live_t=",g_cl.live[0]); cl_pv(o," live_b=",g_cl.live[1]);
   cl_pv(o," live_l=",g_cl.live[2]); cl_pv(o," live_r=",g_cl.live[3]); g_clEnd=b+sizeof b; cl_ch(o,'\n');
   write_file(CL_PATH,b,(usize)(o-b));
@@ -974,6 +974,7 @@ static int cl_word(const char*& p,const char* w){
 // Sources: /dev/shmem/aa_cluster_insets "top bottom left right" (RAM, gone after a reboot; sent
 // when its text changes and again after every video Start) and the command "insets t b l r".
 #define CLUSTER_LIVE_INSETS_FILE "/dev/shmem/aa_cluster_insets"
+#include "app_insets.h"
 static u32 g_liveChk, g_liveHave, g_liveStartSeen;
 static char g_liveTxt[48];
 static void cl_send_live_insets(const u32* v){
@@ -985,18 +986,47 @@ static void cl_send_live_insets(const u32* v){
   cl_send(0x8009,m,(u32)(o-m));
   g_cl.liveSent++; for(u32 k=0;k<4;k++) g_cl.live[k]=v[k];
 }
+// Per-app insets (app_insets.h): when libkb_dm.so names a different navigation app in
+// CLUSTER_NAV_APP_FILE, or the phone starts the video again (it is then back to the SDR insets),
+// that app's line of CLUSTER_APP_INSETS_FILE goes out as 0x8009. An app without a line (and no
+// "default"): the SDR insets again, if an app's insets were sent before. No table: nothing.
+// The manual file CLUSTER_LIVE_INSETS_FILE wins while it exists (for finding the values on the car).
+#define CLUSTER_NAV_APP_FILE    "/dev/shmem/aa_nav_app"
+#define CLUSTER_APP_INSETS_FILE "/tsd/var/aatokombi/app-insets"
+static char g_appName[16];
+static u32 g_appSent;
+static void cl_poll_app_insets(u32 fresh){
+  char b[24], app[16]; usize n=0;
+  void* f=p_fopen(CLUSTER_NAV_APP_FILE,"r");
+  if(f){ n=p_fread(b,1,sizeof b-1,f); p_fclose(f); }
+  b[n]=0; appins_app(b,app,sizeof app);
+  if(!fresh && appins_same(app,g_appName)) return;
+  for(u32 k=0;k<sizeof app;k++){ g_appName[k]=app[k]; if(!app[k]) break; }
+  if(!app[0]) return;                                  // no app seen yet
+  f=p_fopen(CLUSTER_APP_INSETS_FILE,"r");
+  if(!f) return;                                       // no table: the feature is off
+  char t[1024]; usize tn=p_fread(t,1,sizeof t-1,f); p_fclose(f); t[tn]=0;
+  u32 v[4];
+  if(appins_lookup(t,app,v)){ cl_send_live_insets(v); g_appSent=1; g_cl.appSent++; }
+  else if(g_appSent){ cl_send_live_insets(g_cl.insets); g_appSent=0; }
+}
 static void cl_poll_live_insets(u32 now){
   if(g_liveChk && now-g_liveChk<500u) return;
   g_liveChk=now|1u;
   if(!g_clStarted || !ep_open(g_clusterEp) || !p_fopen || !p_fread || !p_fclose) return;
   u32 fresh = g_liveStartSeen!=g_cl.starts;            // a new Start: the phone is back to the SDR insets
+  g_liveStartSeen=g_cl.starts;
   void* f=p_fopen(CLUSTER_LIVE_INSETS_FILE,"r");
-  if(!f){ g_liveTxt[0]=0; g_liveStartSeen=g_cl.starts; return; }
+  if(!f){
+    if(g_liveTxt[0]){ g_liveTxt[0]=0; fresh=1; }       // manual insets removed: the app's again
+    cl_poll_app_insets(fresh);
+    return;
+  }
   char b[48]; usize n=p_fread(b,1,sizeof b-1,f); p_fclose(f); b[n]=0;
+  if(!b[0]){ b[0]=' '; b[1]=0; }                       // an empty file is still "manual"
   u32 same=1; for(u32 k=0;k<sizeof b;k++){ if(b[k]!=g_liveTxt[k]){ same=0; break; } if(!b[k]) break; }
   if(same && !fresh) return;
   for(u32 k=0;k<sizeof b;k++){ g_liveTxt[k]=b[k]; if(!b[k]) break; }
-  g_liveStartSeen=g_cl.starts;
   u32 v[4], k=0; const char* c=b;
   while(k<4){
     while(*c==' '||*c=='\t'||*c==',') c++;

@@ -48,8 +48,9 @@ else
     if sh "$2"; then :; else FAILED="$FAILED $1"; fi
   }
   run_test "build switches (tests/config)"  /work/tests/config/run.sh
-  run_test "protocol decoders (tests/shim)" /work/tests/shim/run.sh
+  run_test "protocol decoders, app insets (tests/shim)" /work/tests/shim/run.sh
   run_test "cluster video ring (tests/ring)" /work/tests/ring/run.sh
+  run_test "nav app classifier (tests/navapp)" /work/tests/navapp/run.sh
   run_test "jar (tests/jar)"                 /work/tests/jar/run.sh
   run_test "shadow check (tests/shadows)"    /work/tests/shadows/run.sh
   if [ "$SHIM_BUILT" = "1" ]; then

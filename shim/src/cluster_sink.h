@@ -780,7 +780,7 @@ static volatile u32 g_pendHead, g_pendTail, g_drainReq;
 static u32 g_ackFileChk, g_ackFile;
 static u32 cl_ack_by_consumption(u32 now){
   struct kbcv* v=g_kv;
-  if(!v || !v->rd_caps || v->rd_state!=1 || !v->rd_alive_ms || now-v->rd_alive_ms>=1000u) return 0;
+  if(!v || !v->rd_caps || v->rd_state!=1 || !kbcv_fresh(now,v->rd_alive_ms,1000u)) return 0;
   if(!g_ackFileChk || now-g_ackFileChk>=2000u){
     g_ackFileChk=now|1u; g_ackFile=0;
     if(p_fopen && p_fclose){ void* f=p_fopen(CLUSTER_ACK_FILE,"r"); if(f){ p_fclose(f); g_ackFile=1; } }
@@ -831,7 +831,7 @@ static void cl_ack_all(){ g_drainReq=1; }
 static u32 g_stateDm;
 static void cl_state_file(u32 now,u32 alive){
   struct kbcv* v=g_kv;
-  u32 dm = (alive && v && v->rd_alive_ms && now - v->rd_alive_ms < 2000u) ? 1u : 0u;
+  u32 dm = (alive && v && kbcv_fresh(now,v->rd_alive_ms,2000u)) ? 1u : 0u;
   if(now-g_stateMs<1000u && alive==g_stateSent && dm==g_stateDm) return;
   g_stateMs=now; g_stateSent=alive; g_stateDm=dm; g_stateTick++;
   // 4th field: the cluster channel of an AA session is open (also without video, e.g. no route)
@@ -1077,7 +1077,7 @@ static void cl_tick(u32 now){
   // map shows for the ~3 s of it); at most one per CLUSTER_SECOND_IDR_GAP_MS, so the switch back
   // after its own restart does not start another.
   {
-    u32 dmNow = (v->rd_alive_ms && now - v->rd_alive_ms < 2000u) ? 1u : 0u;
+    u32 dmNow = kbcv_fresh(now,v->rd_alive_ms,2000u) ? 1u : 0u;
     if(CLUSTER_SECOND_IDR_MS && dmNow && !g_dmPrev && !g_secondIdrAt &&
        (!g_secondIdrDone || now-g_secondIdrDone>=(u32)CLUSTER_SECOND_IDR_GAP_MS) && cl_second_idr_on())
       g_secondIdrAt = (now + (u32)CLUSTER_SECOND_IDR_MS) | 1u;

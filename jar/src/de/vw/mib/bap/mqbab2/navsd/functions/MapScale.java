@@ -110,6 +110,15 @@ NavigationServiceListener {
                 boolean toAA = ZOOM_TO_AA && ClusterVideo.alive();
                 ClusterVideo.log("MapScale SetGet steps=" + n + " autoZoom=" + n2 + " type=" + n3
                         + " aaVideo=" + ClusterVideo.alive() + (toAA ? " -> AA" : " -> stock"));
+                if (n3 == 3) {
+                    // auto zoom on = the OK of the scale mode (the right roller press), the only trace of that key
+                    // that reaches the unit; with ModeKey.OK it steps the cluster mode instead of zooming
+                    boolean stepped = de.aatokombi.WheelKeys.okSeen("MapScale autoZoom", toAA);
+                    if (stepped) {
+                        propertyListener.statusProperty(this.computeMapScaleStatus(), this);
+                        return;
+                    }
+                }
                 if (toAA) {
                     MapScale.zoomAA(n3, n);
                     this.currentZoomType = n3;

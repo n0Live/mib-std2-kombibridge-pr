@@ -169,6 +169,10 @@ ConfigurationServiceListener {
             // car log 2026-10-30: the cluster sends this as part of the head unit's "Map" button
             // (SetGet rgtype=3, then mapSwitchState 5 -> 2); holding the mode key sends nothing
             int rq = activeRgType_SetGet.rgtype;
+            if (rq == 3 && ClusterVideo.mode() == ClusterVideo.MODE_ARROWS) {
+                // the OK on the cluster's "Switch to map?" question, or the unit's map button: the same request
+                de.aatokombi.WheelKeys.okSeen("ActiveRgType rgtype=3 from arrows (OK on the question or the map button)", false);
+            }
             if (rq == 0 || rq == 3) {
                 ClusterVideo.switchTo(rq);
             }

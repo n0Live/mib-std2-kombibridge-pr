@@ -254,9 +254,28 @@ public final class Config {
             public static final int VOLUME_ROLLER = 1;
             /** BACK, the widget-switch key (WheelKeys.KEY_BACK); a short press keeps its stock job. */
             public static final int BACK = 2;
+            /** Voice, key code 50. Held, it also starts the voice assistant. */
+            public static final int VOICE = 3;
+            /** Next track, key code 46. Held, it also does its stock long-press job. */
+            public static final int NEXT = 4;
+            /** Previous track, key code 47. Held, it also does its stock long-press job. */
+            public static final int PREVIOUS = 5;
+            /** Up, key code 38. */
+            public static final int UP = 6;
+            /** Down, key code 39. */
+            public static final int DOWN = 7;
+            /** Menu right, key code 36. */
+            public static final int MENU_RIGHT = 8;
+            /** Menu left, key code 37. */
+            public static final int MENU_LEFT = 9;
+            /**
+             * EXPERIMENTAL. OK, the right roller's press: no key code, it is caught indirectly. While the
+             * AA map is shown on the cluster, one press steps the mode (no holding).
+             */
+            public static final int OK = 10;
         }
 
-        /** Which of the ModeKey keys, held, steps the cluster mode. */
+        /** Which of the ModeKey keys, held, steps the cluster mode (ModeKey.OK: pressed, see there). */
         public static final int MODE_KEY = ModeKey.VOLUME_ROLLER;
     }
 

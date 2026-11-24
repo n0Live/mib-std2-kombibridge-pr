@@ -76,9 +76,13 @@ another firmware the build makes that header itself from a **dump of the two fil
 (`/usr/lib/libOpenMAXAL.so.1` and `/tsd/bin/displaymanager/tsd.mibstd2.system.displaymanager`, in one
 folder, found below it by name):
 
-    ./build.sh MIBHMI.jxe libext.google.gal.receiver.so dist /path/to/dump      # Linux / macOS
-    .\build.bat MIBHMI.jxe libext.google.gal.receiver.so dist C:\path\to\dump    # Windows
-    DM_DUMP=/path/to/dump ./native/build.sh                                      # the library alone
+    ./build.sh MIBHMI.jxe libext.google.gal.receiver.so dist DM_DUMP=/path/to/dump   # Linux / macOS
+    DM_DUMP=/path/to/dump ./build.sh MIBHMI.jxe libext.google.gal.receiver.so        # the same, as a variable
+    .\build.bat MIBHMI.jxe libext.google.gal.receiver.so dist DM_DUMP=C:\path\to\dump   # Windows
+    DM_DUMP=/path/to/dump ./native/build.sh                                          # the library alone
+
+`DM_DUMP=<folder>` may stand anywhere among the arguments. `build.bat` without it asks for the folder
+in a dialog (Cancel builds for firmware 0480; `DM_DUMP=-` skips the question).
 
 `tools/dm_offsets.py` finds the places by structure (the exported `mmfbq_*` symbols, the call inside
 `BufferQueueGetAndWait`, the PLT stub and the one caller of `RingIO::writeAquire`), also writes the

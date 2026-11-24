@@ -100,5 +100,5 @@ sed -n '/^service iMX6.DispMg/,/^service /p' $CPU | grep LD_PRELOAD
 sync
 ro
 echo "done - reboot the unit. Off switch: an SD card with an empty file 'aatokombi-video-disable'."
-echo "After the reboot /dev/shmem/aatokombi-dm.log must say 'libOpenMAXAL 0480 layout confirmed';"
+echo "After the reboot /dev/shmem/aatokombi-dm.log must say 'libOpenMAXAL layout confirmed';"
 echo "'build differs' there means the hook is inert on this firmware (stock cluster map only)."

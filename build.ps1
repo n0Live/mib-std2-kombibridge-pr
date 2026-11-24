@@ -5,6 +5,11 @@
 #
 #   .\build.bat <MIBHMI.jxe> <stock libext.google.gal.receiver.so> [outdir=dist]
 #   .\build.bat <MIBHMI.jxe> - [outdir]      jar only (keep the libgal already on the unit)
+#   .\build.bat <MIBHMI.jxe> <libgal> [outdir] <dm-dump-folder>
+#                                            libkb_dm.so for THIS firmware: a folder with the unit's
+#                                            libOpenMAXAL.so.1 and tsd.mibstd2.system.displaymanager
+#                                            (found below it by name), or $env:DM_DUMP. Without it
+#                                            libkb_dm.so is built for firmware 0480.
 #
 # Started by double-click, it asks for both files in standard Open dialogs and opens the output
 # folder when done. Dropping both files onto build.bat works too, in either order.
@@ -124,7 +129,8 @@ function Wait-DockerEngine([int]$seconds) {
 }
 
 try {
-    $jxe, $gal, $out = $args
+    $jxe, $gal, $out, $dmDump = $args
+    if (-not $dmDump) { $dmDump = $env:DM_DUMP }
     $interactive = $args.Count -eq 0
     # Explorer passes dropped files in no particular order.
     if ($jxe -like '*.so' -and $gal -like '*.jxe') { $jxe, $gal = $gal, $jxe }
@@ -145,6 +151,15 @@ try {
     if (-not $jarOnly) { $gal = (Resolve-Path -LiteralPath $gal).Path }
     New-Item -ItemType Directory -Path $out -Force | Out-Null
     $out = (Resolve-Path -LiteralPath $out).Path
+    $dmFiles = @()
+    if ($dmDump) {
+        if (-not (Test-Path -LiteralPath $dmDump -PathType Container)) { throw "The dump folder does not exist: $dmDump" }
+        foreach ($name in @('libOpenMAXAL.so.1', 'tsd.mibstd2.system.displaymanager')) {
+            $hit = Get-ChildItem -LiteralPath $dmDump -Recurse -File -Filter $name | Select-Object -First 1
+            if (-not $hit) { throw "$name is not below $dmDump" }
+            $dmFiles += $hit.FullName
+        }
+    }
 
     if (-not (Find-Docker)) {
         Write-Host 'Docker is not installed: the build runs in the Linux containers of Docker Desktop.'
@@ -236,9 +251,27 @@ try {
     $clusterSink, $clusterSinkFrom = $choice -split '\|', 2
     Write-Host "  AA map on the AID ............... CLUSTER_SINK=$clusterSink (from $clusterSinkFrom)"
 
+    # libkb_dm.so for the firmware of a dump: its two files are staged inside the repository
+    # (native/dm-dump, ignored by git) where the container sees them.
+    $dmEnv = ''
+    $dmStage = Join-Path $work 'native/dm-dump'
+    if (Test-Path -LiteralPath $dmStage) { Remove-Item -LiteralPath $dmStage -Recurse -Force }
+    if ($dmFiles.Count -gt 0) {
+        if ($clusterSink -eq '1' -and -not $jarOnly) {
+            New-Item -ItemType Directory -Path $dmStage | Out-Null
+            foreach ($f in $dmFiles) { Copy-Item -LiteralPath $f -Destination $dmStage -Force }
+            $dmEnv = '/work/native/dm-dump'
+            Write-Host "  libkb_dm.so addresses ........... from the dump $dmDump"
+        } else {
+            Write-Host '  (dump folder ignored: this build has no libkb_dm.so)'
+        }
+    } else {
+        Write-Host '  libkb_dm.so addresses ........... firmware 0480 (give a dump folder for another firmware)'
+    }
+
     # 3) build all artifacts in the toolchain container; the host tests run there too
     Write-Host '==> [3/4] running build in container'
-    $buildEnv = @('-e', "CLUSTER_SINK=$clusterSink", '-e', "JAR_ONLY=$(if ($jarOnly) { '1' } else { '0' })") +
+    $buildEnv = @('-e', "CLUSTER_SINK=$clusterSink", '-e', "JAR_ONLY=$(if ($jarOnly) { '1' } else { '0' })", '-e', "DM_DUMP=$dmEnv") +
         @(Get-SwitchArgs @('VIDEO_PROBE', 'VIDEO_PROBE_DEEP', 'SKIP_TESTS', 'CLUSTER_DEFINES', 'ALLOW_SHADOW_MISMATCH'))
     if ((Invoke-Native { docker run --rm -v "${work}:/work" -w /work -e HOME=/tmp @buildEnv $image `
             sh /work/docker/entrypoint.sh }) -ne 0) {

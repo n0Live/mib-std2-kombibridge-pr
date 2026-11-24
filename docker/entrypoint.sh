@@ -6,6 +6,8 @@
 #   JAR_ONLY=1    only the jar (no libgal given to build.sh)
 #   SKIP_TESTS=1  no tests (for a quick experiment; the result is untested)
 #   CLUSTER_SINK  1/0 overrides Config.ClusterMap.ENABLED (AA map libgal + libkb_dm.so)
+#   DM_DUMP       folder (inside /work) with the unit's libOpenMAXAL.so.1 and DisplayManager binary:
+#                 libkb_dm.so is then built for that firmware (build.sh stages it as native/dm-dump)
 set -e
 cd /work
 . /work/tools/config-get.sh

@@ -213,10 +213,24 @@ static void threads(void)
   CHECK("the reader got frames", r_ok > 1000);
 }
 
+/* kbcv_fresh: heartbeat stamps written by the other side, possibly a little ahead of `now` */
+static void stamps(void)
+{
+  CHECK("no stamp is never fresh", !kbcv_fresh(5000u, 0u, 1000u));
+  CHECK("stamp == now", kbcv_fresh(5000u, 5000u, 1000u));
+  CHECK("stamp 1 ms ahead (now_ms() | 1 after now was taken)", kbcv_fresh(5000u, 5001u, 1000u));
+  CHECK("stamp 40 ms ahead", kbcv_fresh(5000u, 5040u, 1000u));
+  CHECK("999 ms old", kbcv_fresh(5999u, 5000u, 1000u));
+  CHECK("1000 ms old is stale", !kbcv_fresh(6000u, 5000u, 1000u));
+  CHECK("an hour old is stale", !kbcv_fresh(5000u + 3600000u, 5000u, 2000u));
+  CHECK("across the 32-bit wrap, young", kbcv_fresh(10u, 0xfffffff0u, 1000u));
+  CHECK("across the 32-bit wrap, stale", !kbcv_fresh(2000u, 0xfffffff0u, 1000u));
+}
+
 int main(void)
 {
-  static const char *names[] = { "basics", "wrapping", "index reuse", "torn reads", "key frames", "counters wrap", "two threads" };
-  void (*tests[])(void) = { basics, wrapping, index_reuse, torn_reads, key_frames, counters_wrap, threads };
+  static const char *names[] = { "basics", "wrapping", "index reuse", "torn reads", "key frames", "counters wrap", "stamps", "two threads" };
+  void (*tests[])(void) = { basics, wrapping, index_reuse, torn_reads, key_frames, counters_wrap, stamps, threads };
   unsigned i;
   v = (struct kbcv *)calloc(1, sizeof(*v));
   for (i = 0; i < sizeof(tests) / sizeof(tests[0]); i++) {

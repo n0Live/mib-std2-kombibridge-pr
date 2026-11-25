@@ -124,6 +124,18 @@ KBCV_FN void kbcv_copy(unsigned char *d, const unsigned char *s, unsigned n) { w
 #define KBCV_COPY(d, s, n) kbcv_copy((unsigned char *)(d), (const unsigned char *)(s), (n))
 #endif
 
+/*
+ * 1 when a millisecond stamp written by the other side (alive_ms, rd_alive_ms, rd_ready_ms; 0 =
+ * none) is younger than max_ms at `now`. The other side writes it whenever it likes, so a stamp
+ * read after `now` was taken can be a few ms AHEAD of `now`; that counts as fresh. The difference
+ * is taken signed: unsigned, a stamp ahead wrapped to ~4e9 ms "old" and a running reader looked
+ * gone for a moment (car 2026-11-22, the pixel probe). Also correct across the 49-day wrap.
+ */
+KBCV_FN inline int kbcv_fresh(unsigned now, unsigned stamp, unsigned max_ms)
+{
+  return stamp != 0 && (int)(now - stamp) < (int)max_ms;
+}
+
 KBCV_FN inline struct kbcv_entry *kbcv_entry_of(struct kbcv *v, unsigned seq)
 {
   return &v->index[seq % KBCV_INDEX];

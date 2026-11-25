@@ -1,6 +1,6 @@
 // Cluster video sink experiment (opt-in: CLUSTER_SINK=1, inject.py --cluster-sink).
 //
-// Question this answers on the car, in one session: if the head unit advertises a second,
+// Question this answers, in one session: if the head unit advertises a second,
 // cluster-type H.264 video sink, does the phone open it and stream a separate (map) video?
 //
 // Why it is built this way (all from the target libgal, see shim/DESIGN_VIDEO_PIPELINE.md):
@@ -58,18 +58,18 @@
 // Geometry. The AID shows the decoded picture 1:1 from its top-left corner in the stock window
 // (1024x384 coded, cropped to 1010x376: stock SPS Baseline 3.0, crop right 14 / bottom 8 - never
 // left or top). AA has no 1010x376 format.
-//  - 1280x720 with margins + a crop on all four sides (2026-10-29..11-02): DisplayManager dropped
+//  - 1280x720 with margins + a crop on all four sides: DisplayManager dropped
 //    every stream ~0.2 s after its first frame.
-//  - 800x480, crop bottom 104 (2026-11-03): played for minutes. Picture 800x376 left-aligned, the
+//  - 800x480, crop bottom 104: played for minutes. Picture 800x376 left-aligned, the
 //    right ~210 px of the window empty, so the car marker sat ~105 px left of the window centre.
-//  - 1280x720 WITHOUT margins, cropped right 270 / bottom 344 (2026-11-03): dropped the same way.
-//    slog 2026-11-05: ~0.2 s after the first 1280 frame the AID reports its MOST stream sink
+//  - 1280x720 WITHOUT margins, cropped right 270 / bottom 344: dropped the same way.
+//    slog: ~0.2 s after the first 1280 frame the AID reports its MOST stream sink
 //    unavailable ("StreamSink becomes unavailable"), the HMI switches the cluster transmission off
 //    and DisplayManager stops the encoder. The AID's decoder refuses the format: not fixable here.
 //  - 800x480 cropped bottom 104 (default): a 210 px left inset moves the centre of the phone's
 //    layout to the centre of the window. The picture cannot be moved right: a crop only removes
-//    pixels, and the phone codes one slice per frame (probe 2026-11-04), so no wider picture can be
-//    built from its slices. An SPS VUI sample aspect ratio 101:80 did not stretch it (2026-11-04).
+//    pixels, and the phone codes one slice per frame, so no wider picture can be
+//    built from its slices. An SPS VUI sample aspect ratio 101:80 did not stretch it.
 #ifndef CLUSTER_WIDTH_MARGIN
 #define CLUSTER_WIDTH_MARGIN 0
 #endif
@@ -103,15 +103,15 @@
 #ifndef CLUSTER_INSET_RIGHT
 #define CLUSTER_INSET_RIGHT CLUSTER_CROP_RIGHT
 #endif
-// Decode mode (default since 2026-11-08). The head unit decodes the phone's cluster stream itself
+// Decode mode (the default). The head unit decodes the phone's cluster stream itself
 // (libkb_dm.so: mm-renderer into the cluster display's map window, DisplayManager's stock encoder
-// sends that display to the AID; car 2026-11-07: full-screen AA map). The AID never sees the
+// sends that display to the AID: full-screen AA map). The AID never sees the
 // phone's H.264, so the phone may send 1280x720: the SPS crop keeps the 1010x376 middle, shown 1:1.
 // The CLUSTER_* geometry above is the pass-through mode (phone H.264 straight to the AID, 800x480),
 // used while /tsd/var/aatokombi/passthrough exists (read at each connection). Insets of each mode:
 // /tsd/var/aatokombi/insets (pass-through) and /tsd/var/aatokombi/insets-1280 (decode).
 #define CLUSTER_PASSTHROUGH_FILE "/tsd/var/aatokombi/passthrough"
-// Decode-mode content insets (top bottom left right), owner's choice 2026-11-18 (hidden: 2026-11-20): 180 260 500 500
+// Decode-mode content insets (top bottom left right): 180 260 500 500
 // while the cluster's plate (street, ETA) is drawn above the map, 150 260 470 470 when the jar
 // leaves it empty (Config.ClusterMap.HIDE_PLATE_ON_AA_MAP; build.sh passes -DCLUSTER_PLATE_HIDDEN=1).
 #ifndef CLUSTER_PLATE_HIDDEN
@@ -178,11 +178,11 @@ static ClGeom g_geo = { 0u, CLUSTER_RESOLUTION, 800u, 480u,
 #endif
 // How to get a key frame when DisplayManager needs one (AA has no key-frame request):
 //   2 = take video focus away (NATIVE) and give it back (PROJECTED): the phone restarts the
-//       stream with codec config + IDR (car 2026-10-27: 20 restarts in ~1.5 min, the AID kept
+//       stream with codec config + IDR (the AID keeps
 //       re-activating its map; off by default),
 //   1 = repeat PROJECTED focus only, 0 = never ask (wait for the phone's own IDR, about one a
-//       minute: the AA map then took up to ~2 min to appear, car 2026-10-29),
-// Default 0 since car 2026-11-01: 39 repeated PROJECTED focuses brought no IDR, and the 7 focus
+//       minute: the AA map then took up to ~2 min to appear),
+// Default 0: repeated PROJECTED focuses brought no IDR, and the focus
 // cycles restarted the stream WITHOUT an IDR (the phone's next one came ~19.5 s later each time),
 // every cycle also flapping the stock map and the AID's "map activation". libkb_dm.so now keeps
 // the stock map on screen until the phone's key frame is there instead.
@@ -194,9 +194,9 @@ static ClGeom g_geo = { 0u, CLUSTER_RESOLUTION, 800u, 480u,
 #ifndef CLUSTER_IDR_MODE
 #define CLUSTER_IDR_MODE 4
 #endif
-//   4 = (default, 2026-11-01) only after DisplayManager has waited CLUSTER_IDR_WAIT_MS for a key
+//   4 = (default) only after DisplayManager has waited CLUSTER_IDR_WAIT_MS for a key
 //       frame: ONE NATIVE->PROJECTED cycle with NATIVE held CLUSTER_IDR_NATIVE_MS, at most one per
-//       CLUSTER_IDR_CYCLE_GAP_MS. Why the long hold: car 2026-11-01, Starts after a long NATIVE
+//       CLUSTER_IDR_CYCLE_GAP_MS. Why the long hold: Starts after a long NATIVE
 //       (mode switch, guidance) began with an IDR (libkb_dm.so "resync on a key frame, frames back
 //       3"), the 800 ms cycles of mode 3 did not (next IDR ~19.5 s later). Not verified that 2 s
 //       is long enough: aa_cluster_probe start_idr_ms* shows it (ms from Start to the first IDR).
@@ -340,10 +340,10 @@ static u8* cl_rewrite_service(u8* o,u8* end,const u8* sv,u32 sn){
   }
   return cl_ld(o,end,1,tmp,(u32)(t-tmp),0,0);
 }
-// Content insets for tuning on the car without a rebuild: /tsd/var/aatokombi/insets holds
+// Content insets for tuning without a rebuild: /tsd/var/aatokombi/insets holds
 // "top bottom left right" (pixels); it is read each time the phone connects, so a change takes
 // effect on the next connection. No file (or a bad one): the CLUSTER_INSET_* values.
-// (A run-time 0x8009 UpdateUiConfigRequest, car 2026-11-05, made the phone drop the connection.)
+// (A run-time 0x8009 UpdateUiConfigRequest with the theme makes the phone drop the connection.)
 #define CLUSTER_INSETS_FILE "/tsd/var/aatokombi/insets"
 #define CLUSTER_INSETS_DEC_FILE "/tsd/var/aatokombi/insets-1280"
 #define CLUSTER_FULL_FRAME_FILE "/tsd/var/aatokombi/full-frame"
@@ -364,10 +364,10 @@ static void cl_choose_geometry(){
     g_geo.decode=1; g_geo.res=2; g_geo.w=1280u; g_geo.h=720u;           // VideoCodecResolutionType 2
     g_geo.crop[0]=CLUSTER_DEC_CROP_LEFT; g_geo.crop[1]=CLUSTER_DEC_CROP_RIGHT;
     g_geo.crop[2]=CLUSTER_DEC_CROP_TOP;  g_geo.crop[3]=CLUSTER_DEC_CROP_BOTTOM;
-    // Owner's choice 2026-11-13: window 134 110 1010 376 and insets 180 250 500 500 (top bottom
+    // Window 134 110 1010 376 and insets 180 250 500 500 (top bottom
     // left right) - acceptable in every AID view; the fallback until there are per-view layouts
     // (run-time insets: /dev/shmem/aa_cluster_insets). Before: 228 242 134 136 with the window at
-    // y=100 (car 2026-11-10). Since 2026-11-18 the insets depend on the plate above the map, see
+    // y=100. The insets depend on the plate above the map, see
     // CLUSTER_PLATE_HIDDEN.
     g_geo.ins[0]=CLUSTER_DEC_INSET_TOP;  g_geo.ins[1]=CLUSTER_DEC_INSET_BOTTOM;
     g_geo.ins[2]=CLUSTER_DEC_INSET_LEFT; g_geo.ins[3]=CLUSTER_DEC_INSET_RIGHT;
@@ -589,7 +589,7 @@ static u32 g_tickerUp;
 // the next GalReceiver::shutdown / init: outside it the ticker sends nothing (the MessageRouter is
 // shut down and the endpoints are about to be cleared). g_tickBusy = 1 while a tick is at work, so
 // the session's end can wait for the tick in flight (cluster_video_off). No lock: a spin lock here
-// most likely hung the SAL at the phone's disconnect (2026-11-05).
+// most likely hung the SAL at the phone's disconnect.
 static volatile u32 g_clSession, g_tickBusy;
 static u8  g_spsPps[160]; static u32 g_spsPpsLen;   // rewritten SPS + PPS, Annex-B
 
@@ -730,7 +730,7 @@ static void cl_publish(const u8* au,u32 n){
   u32 pre = (idr && !hasSps) ? g_spsPpsLen : 0;
   // The limit is the decoder's: the AID's own (250 000 bytes) when its H.264 is passed through,
   // the head unit's in decode mode, where only the ring's size counts (key frames of the 1280x720
-  // stream reach ~280 KB, car 2026-11-15: all of them used to be dropped).
+  // stream reach ~280 KB).
   u32 max = g_geo.decode ? KBCV_FRAME_MAX : KBCV_AU_MAX;
   // an SPS inside the AU (not seen from AA so far) goes out uncropped; the config copy wins.
   u32 seq=kbcv_put(v,g_spsPps,pre,au,n,idr?KBCV_FLAG_IDR:0,max);
@@ -757,7 +757,7 @@ static void cl_refill(u32 now){
 }
 // Acknowledgements. AA's flow control: the phone keeps at most max_unacked frames in flight.
 // Two ways to acknowledge a data frame:
-//  - by budget (always so before 2026-11-05): when it arrives, if the CLUSTER_KBPS budget allows;
+//  - by budget: when it arrives, if the CLUSTER_KBPS budget allows;
 //  - by consumption (default while DisplayManager shows the phone's video): only once libkb_dm.so
 //    has taken it from the ring (kv->rd_seq), so the phone is paced by what really goes to the
 //    cluster over MOST, not by our estimate. Not while the stock map shows (DisplayManager does
@@ -771,7 +771,7 @@ static void cl_refill(u32 now){
 #define CL_PEND 64u
 // Lock-free single-producer / single-consumer queue of unacknowledged frames: the receiving thread
 // (cl_ack_paced) only appends at g_pendTail, the ticker (cl_release_acks) only acknowledges and
-// advances g_pendHead. (A spin lock here, 2026-11-05, most likely hung the SAL at the phone's
+// advances g_pendHead. (A spin lock here most likely hung the SAL at the phone's
 // disconnect and the head unit rebooted.) g_ackPending mirrors tail - head for the probe.
 static u32 g_pendSeq[CL_PEND], g_pendT[CL_PEND];
 static volatile u32 g_pendHead, g_pendTail, g_drainReq;
@@ -860,7 +860,7 @@ static u32 cl_guidance_only(u32 now){
 #ifndef CLUSTER_READY_OFF_MS
 #define CLUSTER_READY_OFF_MS 5000
 #endif
-// Car 2026-11-07: still 11 focus drops by this check (the map restarted each time), cause not
+// This check caused focus drops (the map restarted each time), cause not
 // found: OFF by default now, on only while /tsd/var/aatokombi/focus-gate exists.
 #define CLUSTER_FOCUS_GATE_FILE "/tsd/var/aatokombi/focus-gate"
 static u32 g_readySince, g_readyChk, g_focusAlways;
@@ -967,7 +967,7 @@ static int cl_word(const char*& p,const char* w){
 // Content insets on the fly: 0x8009 UpdateUiConfigRequest {1: UiConfig{2: insets{1 top, 2 bottom,
 // 3 left, 4 right}}} on the cluster video channel. From the phone's code (AA 18.1,
 // the UI-config class): below protocol 4.3 a request WITH the theme (field 4) is a
-// protocol error - that dropped the connection on 2026-11-05 - and the request is merged into the
+// protocol error - the phone drops the connection - and the request is merged into the
 // current UiConfig field by field, so all four insets go out, zeros included.
 // Sources: /dev/shmem/aa_cluster_insets "top bottom left right" (RAM, gone after a reboot; sent
 // when its text changes and again after every video Start) and the command "insets t b l r".
@@ -1067,8 +1067,8 @@ static void cl_tick(u32 now){
   if(alive) v->alive_ms = now ? now : 1u;
   else if(v->alive_ms) v->alive_ms=0;
   // The first picture after the AID switches to the phone stays broken until the phone's NEXT key
-  // frame (car 2026-11-03: garbage for ~30 s, the phone's IDR interval, or until a mode switch).
-  // Car 2026-11-04: broken even when the switch happened on the phone's IDR, so the AID's decoder
+  // frame (garbage for ~30 s, the phone's IDR interval, or until a mode switch),
+  // even when the switch happened on the phone's IDR, so the AID's decoder
   // seems to need a second key frame after the stock stream. Default now: libkb_dm.so hands that
   // first IDR to the encoder twice. Fallback, only while /tsd/var/aatokombi/second-idr exists:
   // CLUSTER_SECOND_IDR_MS after EVERY switch to the phone one restart for a fresh IDR (the stock
@@ -1192,7 +1192,7 @@ int cluster_route(void* /*self*/,u32 /*channel*/,u32 msgId,const void* bufref){
     cl_send(0x8003,b,(u32)(o-b));
     // The ticker (focus on guidance start, state file, HMI commands) must run from Setup on: with
     // "map only during guidance" the phone gets NATIVE focus here and never sends Start, so a
-    // ticker started at Start never ran and the map never came (car, 2026-10-30).
+    // ticker started at Start never ran and the map never came.
     cl_video_session_start();
     g_focusOn = cl_want_video(cl_now_ms());
     cl_send_focus_mode(g_focusOn?1u:2u,1);

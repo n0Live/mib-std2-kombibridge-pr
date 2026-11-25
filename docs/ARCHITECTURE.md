@@ -122,7 +122,7 @@ Turn right
 `72` (the type the stock "Android Auto" label uses) selects a 3-row layout that drops row 4. The
 other `*_Type` fields appear inert in this widget — the big font is the primary slot positionally.
 
-**Why the lane row sits in row 1.** It went in row 4 first and was unreadable on the car: the cells
+**Why the lane row sits in row 1.** It went in row 4 first and was unreadable on the cluster: the cells
 have to be padded (`| x | x | ► |`, six lanes = 25 characters) and row 4 measures about 24, in a
 proportional font whose bar glyph is narrow. Row 1 is the widest — long street names live there —
 so that is where it goes. Losing the street name for the last few hundred metres is the deliberate

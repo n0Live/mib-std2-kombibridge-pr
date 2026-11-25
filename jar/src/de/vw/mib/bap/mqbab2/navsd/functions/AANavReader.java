@@ -83,7 +83,7 @@ public final class AANavReader implements Runnable {
     /**
      * Google Maps splits a roundabout in two steps: "enter and leave at exit N, bearing A" while
      * approaching, then -- once the car is on the ring -- a separate ROUNDABOUT_EXIT step with NO
-     * exit number and NO bearing (seen 2026-10: type 35 exit 3 / 225 deg, then type 46 alone for the
+     * exit number and NO bearing (e.g. type 35 exit 3 / 225 deg, then type 46 alone for the
      * last ~200 m). Drawn as is, the cluster's roundabout lost its exit mid-roundabout. This keeps
      * the geometry of the ring step for the exit step that directly follows it; an exit step with no
      * ring step before it (route joined on the ring, after a recalculation) is flagged instead, and
@@ -100,7 +100,7 @@ public final class AANavReader implements Runnable {
         /**
          * @return {angle, number, exitOnly(0/1), side} to use for this frame. The exit step that
          * follows a ring step also keeps the RING's side: 2GIS sends its "leave the roundabout" step
-         * as the clockwise variant even on a counter-clockwise ring (2026-10), which flipped the
+         * as the clockwise variant even on a counter-clockwise ring, which flipped the
          * glyph to ROUNDABOUT_TRS_LEFT halfway round.
          */
         int[] apply(int event, int sideIn, int angleIn, int numberIn) {
@@ -375,12 +375,11 @@ public final class AANavReader implements Runnable {
      * The direction a PREPARE_* glyph can actually be drawn with. The stock renderer (MIBHMI
      * Guidance.doPrepareTurn / doPrepareUTurn) knows PREPARE_TURN only at 0 / 64 / 192 and
      * PREPARE_UTURN only at 64 / 192 -- anything else draws NOTHING, which the AID did for every
-     * slight (224/32) and sharp (96/160) turn in the prepare stage (2026-10). So the turn's own
+     * slight (224/32) and sharp (96/160) turn in the prepare stage. So the turn's own
      * direction is folded onto its side.
      * PREPARE_ROUNDABOUT / PREPARE_SQUARE: the HMI renderer ignores their direction, but the AID
-     * drew no PREPARE_ROUNDABOUT at 224 (trip 2026-11-21, 51 times); the owner remembers it drawn
-     * before. The AID's own rule is unknown; they are folded like PREPARE_TURN (0 / 64 / 192), the
-     * directions of the usual roundabout exits (assumption, to be checked on the car).
+     * drew no PREPARE_ROUNDABOUT at 224. The AID's own rule is unknown; they are folded like PREPARE_TURN (0 / 64 / 192), the
+     * directions of the usual roundabout exits (assumption).
      */
     // Directions each glyph has an image for, from the stock renderer (MIBHMI de.vw.mib.widgets.Guidance
     // do<Glyph>()); any other direction draws nothing at all. null = the glyph ignores direction.
@@ -582,12 +581,12 @@ public final class AANavReader implements Runnable {
         }
         direction = renderableDirection(mainElement, direction);   // never a direction the glyph lacks
         // The street line names the road the manoeuvre turns into only once it is near; while the
-        // arrow is FOLLOW_STREET or the PREPARE_* glyph it names the road the car is on (user
-        // request 2026-10). AA's current road when the phone sends one; otherwise TurnToInfo asks
+        // arrow is FOLLOW_STREET or the PREPARE_* glyph it names the road the car is on.
+        // AA's current road when the phone sends one; otherwise TurnToInfo asks
         // the unit's own map-matching for it (Streets.wantsCurrentPosition).
         // A FOLLOW_STREET arrow counts as far even when AA's own step is "near": AA sends DEPART and
         // STRAIGHT as steps of their own, and their road text ("В сторону ...", "Продолжайте
-        // движение прямо") is an instruction, not the street the car is on (trip 2026-11-17).
+        // движение прямо") is an instruction, not the street the car is on.
         boolean turnNear = streetLineNamesTurn(mainElement, imminent);
         NavState.Maneuver mv = new NavState.Maneuver(mainElement, direction, sideStreets, 0, nextM);
         NavState.Streets st = new NavState.Streets(
@@ -974,7 +973,7 @@ public final class AANavReader implements Runnable {
      * the row normally holds.
      *
      * The cells are padded. Without the spaces the glyphs and bars ran together into an unreadable
-     * smear on the cluster (tried on the car 2026-07-30) — this font is proportional and its bar is
+     * smear on the cluster — this font is proportional and its bar is
      * narrow. Six padded lanes come to 25 characters, which is why this goes in the street row
      * rather than the fourth slot: that one measures about 24.
      */

@@ -66,7 +66,7 @@ public final class Config {
         /**
          * When the near manoeuvre is a left/right TURN and the phone's NEXT step (AA steps[1], IPC
          * line 5) is a turn the other way, draw the stock DOUBLE_TURN glyph instead of the plain
-         * turn arrow. Hardware-verified on the AID (2026-10): direction 64 = "left, then right",
+         * turn arrow. On the AID direction 64 = "left, then right",
          * 192 = "right, then left"; there is no same-side variant. AA gives no distance between the
          * two steps, so any second step counts. No navigator sent a second step so far, so this is
          * dormant until one does.
@@ -222,8 +222,7 @@ public final class Config {
          * insets 150 260 470 470 (top bottom left right) instead of 180 260 500 500.
          * Trade-off: the turn widget shows the street only under the FOLLOW_STREET arrow (it then
          * reads CurrentPositionInfo, which carries the street); at a manoeuvre it reads TurnToInfo,
-         * the same as the plate, so it has no street there (trips 2026-11-20/21: every TurnToInfo
-         * field shows on the plate). In the arrows mode and with the unit's own map the plate and
+         * the same as the plate, so it has no street there. In the arrows mode and with the unit's own map the plate and
          * the ETA are stock. Also a BUILD switch: the insets are compiled into the libgal
          * (build.sh reads this), so install the jar and the libgal of the same build.
          * false: the plate always shows.

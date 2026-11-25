@@ -69,7 +69,7 @@ NavigationServiceListener {
                 currentPositionInfo_Status.positionInfo.setContent(TurnToInfo.aaStreetLine(this.getNavigationService()));
             } else if (ClusterCaps.isNavCapable() && NavState.ACTIVE && aaRoad.length() > 0) {
                 // navsd-shadow delta: the AA current road (0x8007 current_road), when the phone names
-                // it. Google Maps does not send it at all (trip dump 2026-10), so without it we fall
+                // it. Google Maps does not send it at all, so without it we fall
                 // through to the stock value below: the unit's own map-matched street, which is what
                 // the cluster showed under the FOLLOW_STREET arrow before this shadow existed.
                 currentPositionInfo_Status.positionInfo.setContent(aaRoad);

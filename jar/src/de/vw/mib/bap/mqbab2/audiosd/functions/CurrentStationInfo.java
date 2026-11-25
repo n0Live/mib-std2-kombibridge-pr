@@ -422,7 +422,7 @@ ExboxServiceListener {
         // with live nav (route guidance active) or the now-playing track. The whole injection is
         // wrapped: if ANY of our code throws — or a string would overflow the BAPString and break the
         // status serialization — we fall back to the stock label instead of blanking the widget
-        // (a black media menu was seen once on a cold first launch). All our text is length-clamped.
+        // (a black media menu can come on a cold first launch). All our text is length-clamped.
         try {
             if (Config.Navigation.ENABLED
                     && connType == 3

@@ -7,7 +7,7 @@ package de.aatokombi;
  *  - MapViewAndOrientation setGet: mapVisibility {lvdsMapIsVisible, supplementaryMapViewIsVisible}.
  * Every change is logged (INFO) and written to /dev/shmem/aa_cluster_view as
  * "large left right lvds supplementary changes" for the native side. Groundwork for per-view crop
- * and insets of the AA cluster map (plan 2026-11-08); until now only diagnostics.
+ * and insets of the AA cluster map; until now only diagnostics.
  * Java 1.3 source; never throws.
  */
 public final class ClusterView {

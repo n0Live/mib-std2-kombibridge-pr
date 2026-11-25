@@ -139,7 +139,7 @@ ConfigurationServiceListener {
 
     /**
      * The unit's OWN route guidance runs (navsd-shadow delta): then ActiveRgType is stock, also with
-     * an AA session open. Trip 2026-11-19: starting the unit's guidance with AA connected froze
+     * an AA session open. Starting the unit's guidance with AA connected froze
      * the stock cluster map until the map/arrows button was pressed (cause not proven; the mode
      * cycle overriding the stock rgtype is the suspect).
      */
@@ -166,7 +166,7 @@ ConfigurationServiceListener {
                     + " mode=" + ClusterVideo.modeName(ClusterVideo.mode()));
         } catch (Throwable t) { de.aatokombi.Quiet.note("ActiveRgType#6", t); }
         if (cycle) {
-            // car log 2026-10-30: the cluster sends this as part of the head unit's "Map" button
+            // the cluster sends this as part of the head unit's "Map" button
             // (SetGet rgtype=3, then mapSwitchState 5 -> 2); holding the mode key sends nothing
             int rq = activeRgType_SetGet.rgtype;
             if (rq == 0 || rq == 3) {
@@ -270,7 +270,7 @@ ConfigurationServiceListener {
                 // only a CHANGE of the head unit's switch (its "Map" button) picks a mode
                 if (sw == 1 || sw == 3) ClusterVideo.noteHuSwitch(0);
                 else if (sw == 2 || sw == 5) ClusterVideo.noteHuSwitch(3);
-                // 3 -> 4 -> 1: to arrows, 5 -> 2: to the map (car log 2026-10-30)
+                // 3 -> 4 -> 1: to arrows, 5 -> 2: to the map
                 if (sw != lastMapSwitchState && aaCycle() && (sw == 1 || sw == 2 || sw == 3 || sw == 5)) {
                     ClusterVideo.switchTo(sw == 1 || sw == 3 ? 0 : 3);
                 }

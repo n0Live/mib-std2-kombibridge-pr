@@ -248,7 +248,7 @@ extern "C" __attribute__((used)) void video_probe_data(u32 self,u32 a1,u32 a2,u3
   g_videoLastBufW10=0; g_videoLastBufW11=0;
   // Target prologue: r5 = original stack0, then r12 = [r5 + 4] = stack0w1 (the IoBuffer*). It is
   // assigned below, after stack0w1 has actually been read: assigning it here (when stack0w1 had just
-  // been zeroed) is why every io/desc field and the payload stayed empty in the 2026-10-25/26 runs.
+  // been zeroed) is why every io/desc field and the payload stayed empty in the first runs.
   g_videoLastIoPtr=0; g_videoLastIo0=0; g_videoLastIo2=0; g_videoLastIo3=0;
   g_videoLastPayloadBase=0; g_videoLastPayloadSize=0; g_videoPayloadLen=0;
   g_videoLastDescW0=0; g_videoLastDescW1=0; g_videoLastDescW2=0; g_videoLastDescW3=0;

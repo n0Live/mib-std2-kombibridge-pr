@@ -29,8 +29,8 @@ public final class KombiMap {
     /**
      * The stock map comes back only after the phone's video has been gone this long. Every
      * "visible" makes the unit restart its cluster map (mapSwitchState 5 -> 2) and the AID shows
-     * "map activation"; short gaps (stream restart, waiting for a key frame) flapped it (car,
-     * 2026-11-01). libkb_dm.so hands the stock frames over during such gaps by itself.
+     * "map activation"; short gaps (stream restart, waiting for a key frame) flapped it.
+     * libkb_dm.so hands the stock frames over during such gaps by itself.
      */
     private static final long SHOW_AFTER_MS = 4000L;
 

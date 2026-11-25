@@ -78,8 +78,8 @@ final class JunctionSchematic {
      * @param counterClockwise true for a right-hand-traffic ring (ROUNDABOUT_TRS_RIGHT, entered
      *                   turning right): the exits passed lie on the arc the car actually drives,
      *                   entry -&gt; right -&gt; ahead -&gt; left, i.e. increasing on the 0..255 CCW
-     *                   scale; false (TRS_LEFT) the other way round. Until 2026-10 the shorter arc
-     *                   was used, which put the passed exits of a 3rd-exit-left ring on the LEFT,
+     *                   scale; false (TRS_LEFT) the other way round. The shorter arc, used
+     *                   before,, which put the passed exits of a 3rd-exit-left ring on the LEFT,
      *                   where no exit is passed -- and the AID drew none of them.
      * @return a string of distinct spoke characters (up to ROUNDABOUT_ANGLES.length, 15), or "" if
      *         effAngle is not usable. Never throws.

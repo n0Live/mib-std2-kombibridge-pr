@@ -19,14 +19,13 @@ public final class WheelKeys {
     public static final int KEYBOARD_MFW = 4;
     public static final int KEYBOARD_MFW_3GP = 8;
     /**
-     * The press of the volume roller (Mute in the stock HMI) on the development car (MIB2 STD2)
-     * arrives as key 44 (car 2026-11-02, the driver's confirmation). It is not an "OK" key: the
+     * The press of the volume roller (Mute in the stock HMI) on MIB2 STD2 arrives as key 44.
+     * It is not an "OK" key: the
      * MHI2 of zakklmv sends its OK (roller press) as key 40; here no key 40 arrived (40 is
      * only the other roller's turn, encoder 40).
      */
     public static final int KEY_VOLUME_ROLLER = 44;
-    /** KEY_MFW_CANCEL: the development car's wheel: BACK / widget-switch key (car 2026-11-07: states 1/0,
-     *  held 3/4/5 like the roller). */
+    /** KEY_MFW_CANCEL: BACK / widget-switch key (states 1/0, held 3/4/5 like the roller). */
     public static final int KEY_BACK = 41;
     public static final int KEY_VIEW = 35;
 
@@ -42,7 +41,7 @@ public final class WheelKeys {
      * the stock key handling. Must match keypanel_patch.py --view-dsi.
      *
      * Only on a unit where that patch is installed (viewCode()): without it code 59 is the stock
-     * key MQB 0x22 - absent on the development car's wheel, but a real key on other wheels, and swallowing it
+     * key MQB 0x22 - absent on some wheels, but a real key on others, and swallowing it
      * there would take that key away from the driver.
      */
     private static final int KEYPANEL_VIEW_CODE = 59;
@@ -124,8 +123,8 @@ public final class WheelKeys {
 
     /** Returns true when the key is ours alone (the stock handling must skip it). */
     public static boolean key(int keyboard, int code, int state, int p4, int p5) {
-        // p5 = -1: the old updateKey (no second parameter). Every keyboard is logged: car
-        // 2026-11-01 showed no keyboard-4 key at all, while the roller turns came as encoder 40 on
+        // p5 = -1: the old updateKey (no second parameter). Every keyboard is logged:
+        // only some keys reach keyboard 4; the roller turns come as encoders on
         // keyboard 4 (the "3GP" wheel would be keyboard 8).
         if (logged(keyboard)) {
             ClusterVideo.log("wheel key kbd " + keyboard + " code " + code + " state " + state + " (" + p4 + "," + p5 + ")");
@@ -153,7 +152,7 @@ public final class WheelKeys {
     }
 
     /**
-     * Car 2026-11-03: on the system key-panel instance only the rollers' turns (encoders 40, 44)
+     * On the system key-panel instance only the rollers' turns (encoders 40, 44)
      * and one roller's press (key 44) arrive; OK (right roller press) and View never do. On MHI2
      * the DSI key panel has several instances and the MHI2 DSI traces (joeyQuery/MHI2-altScreen
      * docs/cluster-controls.md) show View (35) and the roller press (40) there; luka-dev's Audi

@@ -84,7 +84,7 @@ static void pb_str(PB* s,char* dst,int cap){
   for(u32 i=0;i<n;i++){ char c=(char)s->p[i];
     if(c=='\n'||c=='\r'||c=='\t') c=' ';          // line 1 is newline-delimited; never break it
     // Invisible characters the cluster font draws as a hyphen or a box: Google Maps puts SOFT
-    // HYPHENS into long Russian words ("Направляй\u00ADтесь" came out "Направляй-тесь", 2026-10).
+    // HYPHENS into long Russian words ("Направляй\u00ADтесь" came out "Направляй-тесь").
     // Dropped: U+00AD, U+200B..U+200D (zero-width), U+2060 (word joiner), U+FEFF (BOM).
     { const u8* q=s->p+i; u32 left=n-i;
       if(left>=2 && q[0]==0xC2 && q[1]==0xAD){ i+=1; continue; }
@@ -105,7 +105,7 @@ static void pb_str(PB* s,char* dst,int cap){
 // ===== 1.7 schema, recovered from DHU's generated parsers BY TAG (never by the order the
 // sub-message constructors appear — that mistake once put the distance-to-destination on the
 // cluster where the distance-to-manoeuvre belonged) ===========================================
-// CORRECTED 2026-07-28 against the published schema (mrmees/open-android-auto,
+// CORRECTED against the published schema (mrmees/open-android-auto,
 // oaa/navigation/NavigationNotificationMessage.proto): fields 2 and 4 of the step were the wrong way
 // round here. Both wrap a string in their own field 1, so reading the cue as the road name looked
 // perfectly fine — Google Maps fills both, usually identically. Their names for these messages
@@ -425,7 +425,7 @@ static void parse_curpos(const u8* p,u32 len){
 // STATE_REQUESTING_CAR_PAIRING_PREPARATION for a 1.7 head unit to say it is ready (the 1.3-era
 // libgal never does), then sends BluetoothPairingRequest mid-music. The head unit answers
 // "delayed, then already paired", the phone re-routes its Bluetooth audio, and the media player
-// pauses. Observed on the car at 121 s after connect, every session; on 1.3 the same exchange
+// pauses. It comes at about 121 s after connect, every session; on 1.3 the same exchange
 // happens in the first 2 s, before any music.
 // The protocol has an opt-out: BluetoothChannel.adapter_address = "SKIP_THIS_BLUETOOTH" and the
 // phone skips its Bluetooth state machine. The car's own Bluetooth (HFP calls, contacts) is set up

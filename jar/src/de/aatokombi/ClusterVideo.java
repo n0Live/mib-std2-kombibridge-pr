@@ -9,7 +9,7 @@ import java.io.FileInputStream;
  * /dev/shmem/aa_cluster_video: "<alive> <dm> <tick> <session>\n", rewritten about once a second
  * while the phone's cluster channel is open. dm = 1 only while DisplayManager's hook (libkb_dm.so)
  * really hands the phone's frames to the cluster. The stock cluster map is hidden only then: hiding
- * it while nothing replaces it freezes the cluster map (car, 2026-10-28, hook removed). session = 1
+ * it while nothing replaces it freezes the cluster map. session = 1
  * while the phone's cluster channel is open (also when it sends no video). The state counts only
  * while its tick moved within STALE_MS (a dead SAL stops the ticks).
  *
@@ -173,8 +173,7 @@ public final class ClusterVideo {
             try { w.write(sb.toString()); } finally { w.close(); }
             if (cmdLogged < 5) { cmdLogged++; log("command written: " + cmdSeq + " " + cmd); }
         } catch (Throwable t) {
-            // no CLUSTER_SINK libgal: nothing reads the file anyway; but say why (car 2026-11-05:
-            // zoom commands never reached the libgal, cmd_seq 0)
+            // no CLUSTER_SINK libgal: nothing reads the file anyway; but say why
             if (cmdErrLogged < 5) { cmdErrLogged++; log("command not written: " + cmd + ": " + t); }
         }
     }

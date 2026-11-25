@@ -29,6 +29,14 @@ public final class WheelKeys {
      *  held 3/4/5 like the roller). */
     public static final int KEY_BACK = 41;
     public static final int KEY_VIEW = 35;
+    /** Wheel key codes (keyboard 4) that can be chosen as the mode key (Config.ClusterMap.ModeKey). */
+    public static final int KEY_VOICE = 50;
+    public static final int KEY_NEXT = 46;
+    public static final int KEY_PREVIOUS = 47;
+    public static final int KEY_UP = 38;
+    public static final int KEY_DOWN = 39;
+    public static final int KEY_MENU_RIGHT = 36;
+    public static final int KEY_MENU_LEFT = 37;
 
     /**
      * Key-panel hold state that counts as "held": 3 = first level (~0.8 s), 4 (~2 s), 5 (~3 s).
@@ -73,6 +81,43 @@ public final class WheelKeys {
                     + KEYPANEL_VIEW_CODE + " stays a stock key" : "patched key panel, code " + c));
         }
         return viewCode;
+    }
+
+    /** The key code of a Config.ClusterMap.ModeKey choice; -1 for NONE, OK (no key: okSeen) and an unknown value. */
+    static int modeKeyCode(int choice) {
+        switch (choice) {
+            case Config.ClusterMap.ModeKey.VOLUME_ROLLER: return KEY_VOLUME_ROLLER;
+            case Config.ClusterMap.ModeKey.BACK: return KEY_BACK;
+            case Config.ClusterMap.ModeKey.VOICE: return KEY_VOICE;
+            case Config.ClusterMap.ModeKey.NEXT: return KEY_NEXT;
+            case Config.ClusterMap.ModeKey.PREVIOUS: return KEY_PREVIOUS;
+            case Config.ClusterMap.ModeKey.UP: return KEY_UP;
+            case Config.ClusterMap.ModeKey.DOWN: return KEY_DOWN;
+            case Config.ClusterMap.ModeKey.MENU_RIGHT: return KEY_MENU_RIGHT;
+            case Config.ClusterMap.ModeKey.MENU_LEFT: return KEY_MENU_LEFT;
+            default: return -1;
+        }
+    }
+
+    /**
+     * The driver's OK (right roller press), seen indirectly: the cluster asks the unit for something
+     * only the OK produces (source: "MapScale autoZoom" or "ActiveRgType rgtype=3"). Always logged,
+     * so a car log shows whether it comes. With Config.ClusterMap.ModeKey.OK chosen, the press asks
+     * for the next cluster mode when the AA map (aaMap) or the unit's own map (stockMap) is shown.
+     * Returns true only on the AA map: the caller must not pass the request on there. On the unit's
+     * map the request still goes to it (its auto zoom comes on as well). Any thread; never throws.
+     */
+    public static boolean okSeen(String source, boolean aaMap, boolean stockMap) {
+        try {
+            ClusterVideo.log("wheel OK (indirect): " + source + (aaMap ? ", AA map shown" : stockMap ? ", unit's map shown" : ""));
+            if ((aaMap || stockMap) && Config.ClusterMap.MODE_CYCLE && Config.ClusterMap.MODE_KEY == Config.ClusterMap.ModeKey.OK) {
+                cycleRequested = true;
+                return aaMap;
+            }
+        } catch (Throwable t) {
+            Quiet.note("WheelKeys#1", t);
+        }
+        return false;
     }
 
     private static boolean modeKeyFired;
@@ -130,8 +175,7 @@ public final class WheelKeys {
         if (logged(keyboard)) {
             ClusterVideo.log("wheel key kbd " + keyboard + " code " + code + " state " + state + " (" + p4 + "," + p5 + ")");
         }
-        int modeKey = Config.ClusterMap.MODE_KEY == Config.ClusterMap.ModeKey.BACK ? KEY_BACK
-                : Config.ClusterMap.MODE_KEY == Config.ClusterMap.ModeKey.VOLUME_ROLLER ? KEY_VOLUME_ROLLER : -1;
+        int modeKey = modeKeyCode(Config.ClusterMap.MODE_KEY);
         if (viewKey(keyboard, code, state)) return true;
         if ((keyboard != KEYBOARD_MFW && keyboard != KEYBOARD_MFW_3GP) || modeKey < 0 || code != modeKey) return false;
         if (state == 1 || state == 0) {

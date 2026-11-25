@@ -313,5 +313,6 @@ public final class ClusterVideo {
             }
         }
         KombiMap.phoneVideo(alive);
+        try { de.vw.mib.bap.mqbab2.navsd.functions.MapScale.aaMapChanged(alive); } catch (Throwable t) { de.aatokombi.Quiet.note("ClusterVideo#2", t); }
     }
 }

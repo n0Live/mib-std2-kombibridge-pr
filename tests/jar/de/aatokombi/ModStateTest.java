@@ -61,9 +61,42 @@ public final class ModStateTest {
         WheelKeys.viewCode = -1;
     }
 
+    /** The menu of keys that can step the mode: codes, and OK (no key, seen indirectly). */
+    private static void modeKeyChoices() {
+        ok("NONE has no code", WheelKeys.modeKeyCode(Config.ClusterMap.ModeKey.NONE) == -1);
+        ok("volume roller", WheelKeys.modeKeyCode(Config.ClusterMap.ModeKey.VOLUME_ROLLER) == 44);
+        ok("back", WheelKeys.modeKeyCode(Config.ClusterMap.ModeKey.BACK) == 41);
+        ok("voice", WheelKeys.modeKeyCode(Config.ClusterMap.ModeKey.VOICE) == 50);
+        ok("next", WheelKeys.modeKeyCode(Config.ClusterMap.ModeKey.NEXT) == 46);
+        ok("previous", WheelKeys.modeKeyCode(Config.ClusterMap.ModeKey.PREVIOUS) == 47);
+        ok("up", WheelKeys.modeKeyCode(Config.ClusterMap.ModeKey.UP) == 38);
+        ok("down", WheelKeys.modeKeyCode(Config.ClusterMap.ModeKey.DOWN) == 39);
+        ok("menu right", WheelKeys.modeKeyCode(Config.ClusterMap.ModeKey.MENU_RIGHT) == 36);
+        ok("menu left", WheelKeys.modeKeyCode(Config.ClusterMap.ModeKey.MENU_LEFT) == 37);
+        ok("OK has no key code", WheelKeys.modeKeyCode(Config.ClusterMap.ModeKey.OK) == -1);
+        ok("an unknown choice has none", WheelKeys.modeKeyCode(99) == -1);
+        int[] all = {1, 2, 3, 4, 5, 6, 7, 8, 9};
+        boolean unique = true;
+        for (int i = 0; i < all.length; i++) {
+            for (int j = i + 1; j < all.length; j++) {
+                if (WheelKeys.modeKeyCode(all[i]) == WheelKeys.modeKeyCode(all[j])) unique = false;
+            }
+        }
+        ok("every choice has its own code", unique);
+        // the indirect OK: without ModeKey.OK chosen it only logs
+        WheelKeys.takeCycleRequest();
+        boolean okChosen = Config.ClusterMap.MODE_KEY == Config.ClusterMap.ModeKey.OK && Config.ClusterMap.MODE_CYCLE;
+        ok("OK seen with the AA map: handled only when OK is the mode key", WheelKeys.okSeen("test", true, false) == okChosen);
+        ok("OK seen with the AA map: a cycle only when OK is the mode key", WheelKeys.takeCycleRequest() == okChosen);
+        ok("OK seen with the unit's map: always passed on", !WheelKeys.okSeen("test", false, true));
+        ok("... a cycle only when OK is the mode key", WheelKeys.takeCycleRequest() == okChosen);
+        ok("OK seen without a map: never handled", !WheelKeys.okSeen("test", false, false));
+        ok("... and no cycle", !WheelKeys.takeCycleRequest());
+    }
+
     private static void modeKey() {
-        int key = Config.ClusterMap.MODE_KEY == Config.ClusterMap.ModeKey.BACK ? WheelKeys.KEY_BACK
-                : Config.ClusterMap.MODE_KEY == Config.ClusterMap.ModeKey.VOLUME_ROLLER ? WheelKeys.KEY_VOLUME_ROLLER : -1;
+        modeKeyChoices();
+        int key = WheelKeys.modeKeyCode(Config.ClusterMap.MODE_KEY);
         if (key < 0 || !Config.ClusterMap.MODE_CYCLE) {
             ok("no mode key configured: nothing requested", !WheelKeys.takeCycleRequest());
             return;

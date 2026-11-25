@@ -180,12 +180,14 @@ static void px_dump_raw(const char *name, const uint8_t *px, int w, int h, int s
     close(fd);
 }
 
-/* a copy of one display in a new pixmap (*pix, the caller destroys it); 1 = ok */
-static int px_grab(void *ctx, void *disp, const struct px_cfg *c, int w, int h, void **pix, uint8_t **ptr, int *stride)
+/* a copy of one display in a new pixmap (*pix, the caller destroys it); *buf (optional): its
+ * buffer, for reading the display again with screen_read_display; 1 = ok */
+static int px_grab(void *ctx, void *disp, const struct px_cfg *c, int w, int h, void **pix, uint8_t **ptr, int *stride, void **buf)
 {
     void *bufs[8], *pv[8];
     int iv[16], k;
     *pix = NULL; *ptr = NULL; *stride = 0;
+    if (buf) *buf = NULL;
     if (S.pix_create(pix, ctx) != 0 || !*pix) { LOGV("px: screen_create_pixmap failed, errno", px_errno()); *pix = NULL; return 0; }
     for (k = 0; k < 16; k++) iv[k] = 0;
     iv[0] = c->usage;
@@ -205,6 +207,7 @@ static int px_grab(void *ctx, void *disp, const struct px_cfg *c, int w, int h, 
         int v[2]; v[0] = *stride; v[1] = *ptr ? 1 : 0; px_logn("px: buffer not usable (stride pointer)", v, 2); return 0;
     }
     if (S.read_disp(disp, bufs[0], 0, NULL, 0) != 0) { LOGV("px: screen_read_display failed, errno", px_errno()); return 0; }
+    if (buf) *buf = bufs[0];
     return 1;
 }
 
@@ -256,7 +259,7 @@ static int px_probe_once(void)
         if (first) {                               /* the first copy of a stream: every display */
             char name[48], *o;
             void *p2; uint8_t *q2; int s2;
-            if (px_grab(ctx, list[k], &c, dw, dh, &p2, &q2, &s2)) {
+            if (px_grab(ctx, list[k], &c, dw, dh, &p2, &q2, &s2, NULL)) {
                 o = put(name, PX_RAW_DIR); *o++ = 'd'; o = put_u(o, id < 0 ? 99u : (unsigned)id); o = put(o, ".raw"); *o = 0;
                 px_dump_raw(name, q2, dw, dh, s2, c.fmt, px_seq + 1u);
                 { int v[3]; v[0] = id; v[1] = dw; v[2] = dh; px_logn("px: saved display (id w h)", v, 3); }
@@ -269,7 +272,7 @@ static int px_probe_once(void)
     if (dsel < 0) { LOGV("px: no display to compare, disp", (unsigned)c.disp); goto out; }
     disp = list[dsel];
     if (!px_size(disp, &w, &h)) goto out;
-    if (!px_grab(ctx, disp, &c, w, h, &pix, &ptr, &stride)) goto out;
+    if (!px_grab(ctx, disp, &c, w, h, &pix, &ptr, &stride, NULL)) goto out;
     {
         unsigned grid[PX_GRID_X * PX_GRID_Y], moved = 0, i = 0;
         for (gy = 0; gy < PX_GRID_Y; gy++) {

@@ -423,6 +423,7 @@ static int past(const struct timespec *d)
 
 #include "dec_player.c"
 #include "px_probe.c"
+#include "nav_app.c"
 #include "keys_j5.c"
 
 static int dec_started;
@@ -430,7 +431,7 @@ EXPORT void *mmfbq_get_and_wait(void *q, const struct timespec *deadline)
 {
     resolve();
     if (omx_missing) { usleep(WAIT_SLICE_MS * 1000); return NULL; }     /* "nothing came in time" */
-    if (!dec_started) { dec_started = 1; dec_start(); keys_start(); px_start(); }   /* decode-mode, J5 key and pixel probe threads */
+    if (!dec_started) { dec_started = 1; dec_start(); keys_start(); px_start(); nav_start(); }   /* decode-mode, J5 key, pixel probe, nav app threads */
     if (!reader_return || (uintptr_t)__builtin_return_address(0) != reader_return)
         return real_get_and_wait(q, deadline);
 

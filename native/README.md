@@ -95,6 +95,35 @@ library into a harmless process (`LD_PRELOAD=... KB_DM_CHECK=1 ls`) and reads it
 installer's decisions); on a unit it is new - if it refuses a unit where the hook is known to work,
 that is a bug in the check, and `FORCE=1` is the way round it.
 
+## Per-app insets (navigation app detection)
+
+Navigation apps draw their cards in different places, so one set of content insets does not suit
+them all. With the table `/tsd/var/aatokombi/app-insets` on the unit, the hook finds out which app
+draws the cluster map and libgal gives the phone that app's insets at once (0x8009, no reconnection):
+
+```
+# app      top bottom left right   (pixels of the phone's 1280x720 frame)
+google     150 260 470 470
+waze       150 260 470 470
+yandex     150 260 470 470          # Yandex Navigator and Yango
+2gis       150 260 470 470
+default    150 260 470 470          # any other app (optional)
+```
+
+- Detection (`native/src/nav_app.c`, rules in `nav_app_classify.h`): while the table exists and
+  the decode mode plays, the cluster display is read with QNX Screen 1 s after the video starts and
+  then every 2 s; the colours of a 32x12 grid of the AA window tell the app (each app keeps its own
+  palette on the cluster). An app seen twice in a row is written to `/dev/shmem/aa_nav_app`; the
+  Android Auto splash and pictures that match no app change nothing. The last app is kept across
+  reconnections, so its insets go out right at the next start. Log lines `nav: ...`.
+- libgal (`shim/src/cluster_sink.h`, `shim/src/app_insets.h`) sends the app's line, else the
+  `default` line, else (if an app's insets were sent before) the insets of the connection. The
+  table is read when the app changes and at every start of the video.
+- Finding the values: `echo "150 260 470 470" > /dev/shmem/aa_cluster_insets` sends insets at once
+  and wins over the table while the file exists; remove it to return to the table.
+- No table: no detection, nothing changes. A crash during a Screen call switches detection off
+  until the next reboot.
+
 ## Off switches and diagnostics
 
 - An SD card with an empty file `aatokombi-video-disable`, or `/tsd/var/aatokombi/video-off`:

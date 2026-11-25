@@ -1,5 +1,6 @@
 #!/bin/sh
-# Host unit test for the AA 1.7 wire decoders (shim/src/navproto.h). Needs a host C++ compiler
+# Host unit tests for the AA 1.7 wire decoders (shim/src/navproto.h) and the per-app insets table
+# (shim/src/app_insets.h). Needs a host C++ compiler
 # ($CXX, else clang++ or g++). Runs under ASan+UBSan when their runtime is installed, so an
 # over-read in the hand-rolled protobuf reader is a hard failure; plain otherwise. No compiler at
 # all: SKIPPED (exit 0).
@@ -20,10 +21,15 @@ if SDK="$(xcrun --show-sdk-path 2>/dev/null)" && [ -n "$SDK" ]; then
 fi
 
 # shellcheck disable=SC2086
-if ! $CXX $EXTRA -std=c++11 -O1 -g -Wall -Wextra -Wno-unused-function \
-     -fsanitize=address,undefined -fno-omit-frame-pointer \
-     -o "$OUT" test_navproto.cpp 2>/dev/null; then
-  echo "(sanitizer runtime not available: building without it)"
-  $CXX $EXTRA -std=c++11 -O1 -g -Wall -Wextra -Wno-unused-function -o "$OUT" test_navproto.cpp
-fi
-exec "$OUT"
+build() {   # source, output
+  if ! $CXX $EXTRA -std=c++11 -O1 -g -Wall -Wextra -Wno-unused-function \
+       -fsanitize=address,undefined -fno-omit-frame-pointer \
+       -o "$2" "$1" 2>/dev/null; then
+    echo "(sanitizer runtime not available: building $1 without it)"
+    $CXX $EXTRA -std=c++11 -O1 -g -Wall -Wextra -Wno-unused-function -o "$2" "$1"
+  fi
+}
+build test_navproto.cpp "$OUT"
+build test_app_insets.cpp "${OUT}_app_insets"
+"$OUT"
+exec "${OUT}_app_insets"

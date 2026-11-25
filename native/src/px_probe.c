@@ -333,7 +333,7 @@ static void *px_thread(void *arg)
         now = now_ms();
         if (!fcheck || now - fcheck >= 5000u) { fcheck = now | 1u; on = exists(PX_FILE); }
         /* Signed: the decoder stamps rd_alive_ms with now_ms() | 1 after `now` was taken here, so
-         * it can be a little AHEAD of `now` (car 2026-11-22: the unsigned difference wrapped and
+         * it can be a little AHEAD of `now` (unsigned, the difference wrapped and
          * every few seconds the probe took the running stream for a new one). */
         playing = on && kv && kv->rd_alive_ms && (int)(now - kv->rd_alive_ms) < (int)PX_GAP_MS && !switched_off();
         if (!playing) { t0 = 0; continue; }

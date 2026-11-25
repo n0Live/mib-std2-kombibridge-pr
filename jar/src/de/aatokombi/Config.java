@@ -278,6 +278,35 @@ public final class Config {
 
         /** Which of the ModeKey keys, held, steps the cluster mode (ModeKey.OK: pressed, see there). */
         public static final int MODE_KEY = ModeKey.VOLUME_ROLLER;
+
+        /**
+         * The insets of Android Auto's map, per navigation app, come from the table app-insets.txt next
+         * to this file (edit it before the build; it is installed on the unit). Each app has three
+         * templates there, narrow / medium / wide, chosen on the AA map with INSETS_KEY. The table also
+         * holds the guidance-only lines and the switch that hides the app's own guidance card.
+         */
+        public static final class InsetsKey {
+            private InsetsKey() {}
+
+            /** No key: the template stays INSETS_TEMPLATE (or the one chosen last). */
+            public static final int NONE = 0;
+            /**
+             * Zoom on the AA map (the roller turned, or up / down on a wheel without a roller): zooming
+             * out is the next wider template, zooming in the next narrower one. The phone does not zoom.
+             */
+            public static final int ZOOM = 1;
+            /**
+             * OK in the zoom question on the AA map (see ModeKey.OK): narrow -> medium -> wide -> narrow.
+             * If MODE_KEY is ModeKey.OK too, OK only switches the cluster map, not the template.
+             */
+            public static final int OK = 2;
+        }
+
+        /** Which key changes the insets template (InsetsKey). */
+        public static final int INSETS_KEY = InsetsKey.ZOOM;
+
+        /** The template at the first start; after that the one chosen last is kept on the unit. */
+        public static final int INSETS_TEMPLATE = ClusterInsets.NARROW;
     }
 
     // ===== compatibility and logging ========================================================

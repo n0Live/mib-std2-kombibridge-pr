@@ -1,0 +1,40 @@
+# AAtoKombi default table: the next build replaces it on the unit. Delete this line to keep your own edits.
+#
+# Insets of Android Auto's map on the cluster, per navigation app: where the app may put its cards,
+# in pixels of the phone's 1280x720 frame. Installed to /tsd/var/aatokombi/app-insets.
+#
+#   <app> [narrow|medium|wide] [guide] top bottom left right
+#
+# app       google, waze, yandex (Yandex Navigator and Yango), 2gis, or default (any other app, and
+#           before the app is recognised)
+# template  the one chosen on the wheel (Config.ClusterMap.INSETS_KEY); a line without one is for all
+# guide     the line is only for the time of route guidance
+# The most specific line wins (template, then guide); the app's lines win over the default lines.
+#
+# hide-card: while route guidance runs, the side insets are 639 640, so the app has no room for its
+# own guidance card on the cluster (the cluster's own guidance is shown instead).
+#hide-card
+
+default narrow  140 260 470 470
+default medium  140 260 400 400
+default wide    160 260  70  70
+
+yandex  narrow  140 200 460 460
+yandex  medium  140 200 400 400
+yandex  wide    125 200  70  70
+yandex  narrow guide 140 150 460 460
+yandex  medium guide 140 150 400 400
+yandex  wide   guide 125 150  70  70
+
+google  narrow  140 265 470 470
+google  medium  140 265 400 400
+google  wide    140 265 130 130
+google  wide   guide 140 265 400 130
+
+waze    narrow  140 260 470 470
+waze    medium  140 260 400 400
+waze    wide    170 270  70  70
+
+2gis    narrow  160 280 500 500
+2gis    medium  170 300 355 355
+2gis    wide    160 280 325 325

@@ -11,7 +11,8 @@
 //   2gis     150 260 470 470
 //   default  150 260 470 470      (any app without a line of its own; optional)
 // The numbers are top bottom left right, in pixels of the phone's 1280x720 frame, the same as the
-// insets files. Yandex Navigator and Yango are both "yandex".
+// insets files. Yandex Navigator and Yango are both "yandex". Templates and guidance lines: see
+// appins_lookup_tpl; the template chosen on the wheel is in /tsd/var/aatokombi/insets-template.
 #ifndef APP_INSETS_H
 #define APP_INSETS_H
 
@@ -41,24 +42,71 @@ static int appins_numbers(const char*& p,unsigned v[4]){
   return k==4;
 }
 
-// The insets for `app` from the table text: its own line, else the "default" line. 1 = found.
-static int appins_lookup(const char* table,const char* app,unsigned v[4]){
-  unsigned dflt[4]; int haveDflt=0;
+// One line of the table: "<app> [narrow|medium|wide] [guide] top bottom left right". A line without
+// a template is for all three, a line without "guide" is for guidance and without it, a "guide" line
+// only for the time of route guidance. The most specific line wins (template 2, guide 1); among lines
+// as specific, the last one. The app's lines win over the "default" lines.
+// tpl: "narrow", "medium" or "wide" ("" = none chosen: only lines without a template match).
+// Returns 1 when a line matched.
+static int appins_word(const char*& p,char* w,unsigned wsz){
+  unsigned n=0;
+  while(*p==' '||*p=='\t') p++;
+  while(*p && *p!=' ' && *p!='\t' && *p!='\r' && *p!='\n' && *p!=','){ if(n+1<wsz) w[n++]=*p; p++; }
+  w[n]=0; return (int)n;
+}
+static int appins_lookup_tpl(const char* table,const char* app,const char* tpl,int guiding,unsigned v[4]){
+  int best[2]={-1,-1};                            // [0] the app's best score, [1] the default's
+  unsigned got[2][4];
   const char* p=table;
-  if(!app || !*app) return 0;
+  if(!app || !*app) app="default";
+  if(!tpl) tpl="";
   while(*p){
-    char w[16]; unsigned n=0, t[4];
+    char w[16]; unsigned t[4];
     while(*p==' '||*p=='\t'||*p=='\r'||*p=='\n') p++;
     if(*p=='#'){ while(*p && *p!='\n') p++; continue; }
-    while(*p && *p!=' ' && *p!='\t' && *p!='\r' && *p!='\n'){ if(n+1<sizeof w) w[n++]=*p; p++; }
-    w[n]=0;
-    if(n && appins_numbers(p,t)){
-      if(appins_same(w,app)){ for(unsigned k=0;k<4;k++) v[k]=t[k]; return 1; }
-      if(appins_same(w,"default")){ for(unsigned k=0;k<4;k++) dflt[k]=t[k]; haveDflt=1; }
+    if(appins_word(p,w,sizeof w)){
+      int who = appins_same(w,app) ? 0 : appins_same(w,"default") ? 1 : -1;
+      int score=0, ok=1;
+      const char* q=p; char x[16];
+      // optional template, then optional "guide", then the numbers
+      const char* r=q; appins_word(r,x,sizeof x);
+      if(appins_same(x,"narrow")||appins_same(x,"medium")||appins_same(x,"wide")){
+        if(!appins_same(x,tpl)) ok=0;
+        score+=2; q=r;
+        r=q; appins_word(r,x,sizeof x);
+      }
+      if(appins_same(x,"guide")){ if(!guiding) ok=0; score+=1; q=r; }
+      p=q;
+      if(who>=0 && appins_numbers(p,t) && ok && score>=best[who]){
+        best[who]=score; for(unsigned k=0;k<4;k++) got[who][k]=t[k];
+      }
     }
-    while(*p && *p!='\n') p++;                    // the rest of a line, also a bad one
+    while(*p && *p!='\n') p++;                   // the rest of a line, also a bad one
   }
-  if(haveDflt){ for(unsigned k=0;k<4;k++) v[k]=dflt[k]; return 1; }
+  int who = best[0]>=0 ? 0 : best[1]>=0 ? 1 : -1;
+  if(who<0) return 0;
+  for(unsigned k=0;k<4;k++) v[k]=got[who][k];
+  return 1;
+}
+
+// The insets for `app` from the table text: its own line, else the "default" line. 1 = found.
+// (Lines with a template or "guide" do not match here.)
+static int appins_lookup(const char* table,const char* app,unsigned v[4]){
+  if(!app || !*app) return 0;
+  return appins_lookup_tpl(table,app,"",0,v);
+}
+
+// A line "hide-card": while route guidance runs, the side insets are 639 640, so the navigation
+// app has no room for its own guidance card on the cluster. 1 = the line is there.
+static int appins_hide_card(const char* table){
+  const char* p=table;
+  while(*p){
+    char w[16];
+    while(*p==' '||*p=='\t'||*p=='\r'||*p=='\n') p++;
+    if(*p=='#'){ while(*p && *p!='\n') p++; continue; }
+    if(appins_word(p,w,sizeof w) && appins_same(w,"hide-card")) return 1;
+    while(*p && *p!='\n') p++;
+  }
   return 0;
 }
 

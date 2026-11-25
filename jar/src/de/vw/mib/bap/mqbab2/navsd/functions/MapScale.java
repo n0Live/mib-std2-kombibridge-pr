@@ -140,10 +140,22 @@ NavigationServiceListener {
                     boolean stockMap = !toAA && ClusterVideo.session()
                             && ClusterVideo.mode() == ClusterVideo.MODE_STOCK_MAP;
                     boolean stepped = de.aatokombi.WheelKeys.okSeen("MapScale autoZoom", toAA, stockMap);
+                    if (!stepped && toAA && Config.ClusterMap.INSETS_KEY == Config.ClusterMap.InsetsKey.OK) {
+                        de.aatokombi.ClusterInsets.next();
+                        stepped = true;
+                    }
                     if (stepped) {
                         propertyListener.statusProperty(this.computeMapScaleStatus(), this);
                         return;
                     }
+                }
+                if (toAA && Config.ClusterMap.INSETS_KEY == Config.ClusterMap.InsetsKey.ZOOM && n3 != 3) {
+                    // the zoom picks the insets template instead: one step per detent (BAP steps -1 = zoom
+                    // out = wider); continuous zoom and its stop change nothing
+                    if (n3 == 1 && n != 0) de.aatokombi.ClusterInsets.step(n < 0 ? 1 : -1);
+                    this.currentZoomType = n3;
+                    propertyListener.statusProperty(this.computeMapScaleStatus(), this);
+                    return;
                 }
                 if (toAA) {
                     MapScale.zoomAA(n3, n);

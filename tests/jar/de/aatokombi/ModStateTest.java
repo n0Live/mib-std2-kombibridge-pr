@@ -94,6 +94,34 @@ public final class ModStateTest {
         ok("... and no cycle", !WheelKeys.takeCycleRequest());
     }
 
+    /** Insets templates: names, the table install rule, the build's table. */
+    private static void insetsTemplates() {
+        ok("template words", ClusterInsets.parse("narrow") == 0 && ClusterInsets.parse("medium\n") == 1
+                && ClusterInsets.parse(" wide ") == 2);
+        ok("unknown template word", ClusterInsets.parse("huge") == -1 && ClusterInsets.parse(null) == -1);
+        ok("names", "narrow".equals(ClusterInsets.name(0)) && "wide".equals(ClusterInsets.name(2)));
+        String b = AppInsetsDefault.TEXT;
+        ok("the build's table starts with the header", b.startsWith(ClusterInsets.HEADER));
+        ok("the build's table has a default line per template", b.indexOf("default narrow") >= 0
+                && b.indexOf("default medium") >= 0 && b.indexOf("default wide") >= 0);
+        ok("no table on the unit: install", ClusterInsets.replaceTable(null, b));
+        ok("the same default: nothing to write", !ClusterInsets.replaceTable(b, b));
+        ok("an older default: replaced", ClusterInsets.replaceTable(ClusterInsets.HEADER + " old\nx 1 2 3 4\n", b));
+        ok("the owner's table (no header): kept", !ClusterInsets.replaceTable("google 1 2 3 4\n", b));
+        int t = ClusterInsets.current();
+        ok("the first template is the configured one", t == Config.ClusterMap.INSETS_TEMPLATE);
+        ClusterInsets.set(ClusterInsets.NARROW);
+        ClusterInsets.step(-1);
+        ok("narrower than narrow: stays", ClusterInsets.current() == ClusterInsets.NARROW);
+        ClusterInsets.step(1);
+        ok("one wider", ClusterInsets.current() == ClusterInsets.MEDIUM);
+        ClusterInsets.step(1);
+        ClusterInsets.step(1);
+        ok("wider than wide: stays", ClusterInsets.current() == ClusterInsets.WIDE);
+        ClusterInsets.next();
+        ok("next after wide: narrow", ClusterInsets.current() == ClusterInsets.NARROW);
+    }
+
     private static void modeKey() {
         modeKeyChoices();
         int key = WheelKeys.modeKeyCode(Config.ClusterMap.MODE_KEY);
@@ -168,7 +196,7 @@ public final class ModStateTest {
     public static void main(String[] args) {
         MIBLogger.getInstance().setLogLevel(MIBLogger.SILENT);   // the key handling logs every key
         String[] names = { "cluster state line", "wheel view key", "wheel mode key", "swallowed exceptions",
-                           "ipc end line" };
+                           "ipc end line", "insets templates" };
         for (int i = 0; i < names.length; i++) {
             int before = failed;
             switch (i) {
@@ -176,7 +204,8 @@ public final class ModStateTest {
                 case 1: viewKey(); break;
                 case 2: modeKey(); break;
                 case 3: quiet(); break;
-                default: ipcEnd(); break;
+                case 4: ipcEnd(); break;
+                default: insetsTemplates(); break;
             }
             System.out.println(pad(names[i]) + (failed == before ? "ok" : "FAILED"));
         }

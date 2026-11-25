@@ -444,10 +444,10 @@ public class AndroidAutoTarget
     }
 
     // Where the covers go (once, cached). A new file every track, so it must be RAM: the unit's
-    // root file system is its flash (mount, car 2026-11-17: / on hd0t177, qnx6; RAM only on
+    // root file system is its flash (/ on hd0t177, qnx6; RAM only on
     // /ramdisk and /dev/shmem). The VW HMI image cache /var/app/icab/tmp is used only when it
     // really lies in RAM; else /dev/shmem. COVER_ON_FLASH_FILE brings the old choice back, should
-    // the picture server not read covers from /dev/shmem (not verified on the car yet).
+    // the picture server not read covers from /dev/shmem.
     static final String ICAB_TMP = "/var/app/icab/tmp";
     static final String COVER_RAM_DIR = "/dev/shmem";
     static final String COVER_ON_FLASH_FILE = "/tsd/var/aatokombi/cover-on-flash";

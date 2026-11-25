@@ -4,7 +4,7 @@ package de.aatokombi;
  * Diagnostic: one log line per request the cluster sends to a shadowed BAP function (navsd
  * MapViewAndOrientation, MapPresentation, MapColorAndType, RepeatLastNavAnnouncement), with the
  * request's public fields. Written to find out whether holding OK on the steering wheel sends the
- * head unit anything (car, 2026-10-30: no ActiveRgType / MapScale request on OK). Only at
+ * head unit anything (no ActiveRgType / MapScale request on OK). Only at
  * Config.Advanced.LOG_LEVEL DEBUG or TRACE. Java 1.3 source; never throws.
  */
 public final class BapTrace {

@@ -248,7 +248,7 @@ in the plan.
 
 ## Runtime design
 
-   > Superseded (2026-11): the map on the AID is built on a second, cluster-type video sink
+   > Superseded: the map on the AID is built on a second, cluster-type video sink
    > (`src/cluster_sink.h`, `native/`), not on the main display's stream described here. The
    > `VIDEO_PIPELINE=1` ingress stage of item 1 was removed from the sources; the text is kept
    > as the record of that design.

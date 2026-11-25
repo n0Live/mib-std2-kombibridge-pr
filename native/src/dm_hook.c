@@ -79,7 +79,7 @@ static uint8_t frame[KBCV_AU_MAX];       /* pass-through only: the AID's decoder
 static unsigned next_seq, generation;
 static int phone, need_idr, wait_stock_idr, ring_stalled;
 /* The AID's decoder shows the first picture after the stock stream broken (purple, smeared) until
- * the next key frame, even when that first picture IS a key frame (car 2026-11-04). So the first
+ * the next key frame, even when that first picture IS a key frame. So the first
  * phone IDR after each switch from the stock map goes to the encoder twice: the second copy is
  * then the reference for the phone's P-frames. Off while VAR_DIR/no-dup-idr exists. */
 #define NO_DUP_FILE         VAR_DIR "/no-dup-idr"
@@ -341,7 +341,7 @@ static int has_nal(const uint8_t *p, uint32_t n, unsigned type)
  * Resynchronise on the newest key frame still in the ring, not on the newest frame: the phone
  * sends an IDR only when its stream starts (and then about once a minute), so jumping to the head
  * threw away the starting IDR whenever the reader came a few frames late, and the AA map then
- * waited a minute or two for the next one (car, 2026-10-29). Returns the sequence BEFORE that IDR.
+ * waited a minute or two for the next one. Returns the sequence BEFORE that IDR.
  */
 static unsigned resync_seq(unsigned head)
 {
@@ -355,7 +355,7 @@ static unsigned resync_seq(unsigned head)
  * A key frame of the phone still in the ring. The switch from the stock map to the phone waits for
  * one and keeps handing over the stock frames until then: switching first and waiting for the
  * phone's next IDR (it sends one only every ~20 s) left the AID without any picture meanwhile,
- * showing "map activation" (car, 2026-11-01).
+ * showing "map activation".
  */
 static int ring_has_idr(void)
 {
@@ -466,8 +466,8 @@ EXPORT void *mmfbq_get_and_wait(void *q, const struct timespec *deadline)
             /* lost the picture (stream restart, frames skipped): back to the stock map until the
              * phone's next key frame rather than leaving the AID without frames */
             if (need_idr && idr_wait_ms && now_ms() - idr_wait_ms >= IDR_FALLBACK_MS) break;
-            /* still the cluster's reader, also while a still map sends no frames (car
-             * 2026-11-06: without this the libgal took focus away after 5 s, 26 times) */
+            /* still the cluster's reader, also while a still map sends no frames
+             * (without this the libgal takes focus away after 5 s) */
             kv->rd_ready_ms = now_ms() | 1u;
             cluster_rd_ms = kv->rd_ready_ms;
             wait_frame(head);
@@ -475,8 +475,8 @@ EXPORT void *mmfbq_get_and_wait(void *q, const struct timespec *deadline)
         if (past(deadline) && phone_alive() && !(need_idr && idr_wait_ms && now_ms() - idr_wait_ms >= IDR_FALLBACK_MS))
             return NULL;
         /*
-         * DisplayManager flushed the cluster queue while the phone's video plays. Car 2026-11-02
-         * (1280x720): every switch to the phone ended ~0.2 s later, then the stock path waited for
+         * DisplayManager flushed the cluster queue while the phone's video plays. At 1280x720
+         * every switch to the phone ended ~0.2 s later, then the stock path waited for
          * the stock encoder's key frame (~1 s) and the phone's IDR had left the ring by then, so
          * the AA map was gone for 30 s. Now: hand the flush back, stay on the phone and restart at
          * the newest IDR still in the ring. Three flushes within 5 s: give up to the stock map.

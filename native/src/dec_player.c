@@ -1,12 +1,12 @@
 /*
- * Decode mode (default since 2026-11-08, car 2026-11-07: full-screen AA map on the AID).
+ * Decode mode (the default): full-screen AA map on the AID.
  * The libgal (mode 1 in the shared memory) asks the phone for 1280x720 and crops its SPS to the
  * 1010x376 middle. Here, in DisplayManager, the stream is played with mm-renderer - the way the SAL
  * plays Android Auto's main video - into a window that DisplayManager manages as the cluster map:
  * group "DisplayManagerWindowGroup", id "DispId[DISPLAYABLE_MAP]Clone1" (DisplayManager decodes
  * "DispId[X]" into displayable X and "CloneN" into display N; the Navi's own map windows are
  * "DispId[DISPLAYABLE_MAP]" / "...Clone1" (DISPLAYID_CLUSTER) / "...Clone2"). Ours takes the
- * cluster map's place while it exists; the stock map comes back when it closes (car 2026-11-07).
+ * cluster map's place while it exists; the stock map comes back when it closes.
  * DisplayManager's stock encoder encodes the whole composed cluster display, so the AID gets the
  * AA map in the stock stream: no pass-through, no key-frame trouble on the AID.
  * Optional /tsd/var/aatokombi/decode-window: "x y w h" of the window on the cluster display
@@ -89,8 +89,8 @@ static void *dec_dict1(const char *k, const char *v)
     return d ? M.dset(d, k, v) : NULL;
 }
 
-/* QNX TimerTimeout(): unblock a MsgSendv that the mdev does not answer (car 2026-11-07: the
- * first data packet blocked the test thread for good). _NTO_TIMEOUT_SEND | _NTO_TIMEOUT_REPLY. */
+/* QNX TimerTimeout(): unblock a MsgSendv that the mdev does not answer (without it the
+ * first data packet can block the thread for good). _NTO_TIMEOUT_SEND | _NTO_TIMEOUT_REPLY. */
 typedef int (*timer_timeout_t)(int, int, const void *, const unsigned long long *, unsigned long long *);
 static timer_timeout_t dec_tt;
 static unsigned dec_timeouts;
@@ -175,8 +175,8 @@ static unsigned dec_udiv(unsigned n, unsigned d)
 }
 
 /*
- * The i.MX6 decoder ignores the SPS frame cropping and outputs the whole coded picture (car,
- * 2026-11-08: 1280x720 squashed into 1010x376). mm-renderer's video output takes a source
+ * The i.MX6 decoder ignores the SPS frame cropping and outputs the whole coded picture
+ * (1280x720 squashed into 1010x376). mm-renderer's video output takes a source
  * rectangle instead: output parameters video_src_x/y/w/h (mmr-mmf-routing -> screen_writer
  * VideoWriterSrcX/Y/W/H -> SCREEN_PROPERTY_SOURCE_POSITION/SIZE). Whether it also applies while
  * playing is what the decode-src file tests.

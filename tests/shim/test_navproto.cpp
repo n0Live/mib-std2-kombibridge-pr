@@ -509,7 +509,7 @@ static void test_fuzz(){
 static int hexval(char c){ return c<='9'? c-'0' : (c|32)-'a'+10; }
 static void test_destination(){
   reset();
-  // Golden frame: Google Maps, 2026-10 trip dump (one step + one destination).
+  // Golden frame: Google Maps trip dump (one step + one destination).
   const char* hx="0a6c0a02080112320a30d09220d181d182d0bed180d0bed0bdd18320d183d0bb2e20d0a1d182d0b0d185d0b0d0bdd0bed0b2d181d0bad0b0d18f22320a30d09220d181d182d0bed180d0bed0bdd18320d183d0bb2e20d0a1d182d0b0d185d0b0d0bdd0bed0b2d181d0bad0b0d18f12220a20d183d0bb2e20d09fd180d0bed0bcd18bd188d0bbd0b5d0bdd0bdd0b0d18f2031";
   u8 fr[256]; u32 n=0; for(const char* h=hx; h[0]&&h[1]; h+=2) fr[n++]=(u8)(hexval(h[0])*16+hexval(h[1]));
   CHECK(parse_navstate(fr,n)==1, "golden frame: no step parsed");

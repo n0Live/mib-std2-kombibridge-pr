@@ -1,7 +1,7 @@
 /*
  * Host test for the pure lookup tables in AANavReader — the AA enum -> VW cluster mappings. They are
  * plain static int math with no framework dependency, and they are exactly where a transcription
- * slip is invisible in review and expensive on the car.
+ * slip is invisible in review and expensive to find on the cluster.
  *
  * Same package as the class under test: the methods are package-private on purpose.
  * Run: tests/jar/run.sh   (not part of the shipped jar — the build compiles jar/src only)
@@ -161,7 +161,7 @@ public final class NavMappingTest {
                 new int[]{ 8, 0,0, 0,0, 0,2, 0,2, 192,0, 192,0, 192,0, 192,0 }).length, 6);
 
         // Width is the whole reason this row lives in the street line: the unpadded version smeared
-        // on the car, and the padded worst case does not fit the ~24-character fourth slot. If this
+        // on the cluster, and the padded worst case does not fit the ~24-character fourth slot. If this
         // ever grows again, it has to be re-measured on the cluster, not assumed.
         eq("six padded lanes", eight.length(), 25);
 
@@ -523,7 +523,7 @@ public final class NavMappingTest {
         eq("roundabout exit1 spoke count", r1.length(), 1);
         eq("roundabout exit1 spoke value", (int) r1.charAt(0), 0);
 
-        // Third exit taken (the 2026-09 field-test case: Google Maps roundabout, effAngle=270 exit=3):
+        // Third exit taken (Google Maps roundabout, effAngle=270 exit=3):
         // the two passed exits are spread along the shorter arc from the entry (raw 107, 86) and,
         // on the fine grid, each keeps its own slot -> three distinct spokes {0x70,0x50,0x40}.
         // The taken exit's own snapped bearing is always last.
@@ -532,15 +532,15 @@ public final class NavMappingTest {
         eq("roundabout exit3 (fine grid)", r3, charStr(192, 0, 64));
         eq("roundabout exit3 taken spoke is last", (int) r3.charAt(r3.length() - 1), 64);
 
-        // The OTHER 2026-09 field-test case (Yandex roundabout, effAngle synthesised from exit=2):
-        // both spokes sit exactly on grid positions, so this is byte-for-byte what was actually
-        // logged on the car ({0xc0,0x00}).
+        // A Yandex roundabout, effAngle synthesised from exit=2):
+        // both spokes sit exactly on grid positions, so this is byte-for-byte what the phone's
+        // step gives ({0xc0,0x00}).
         String r2 = JunctionSchematic.buildRoundabout(180, 2, true);
         eq("roundabout exit2 (matches the field log)", r2, charStr(192, 0));
 
         // No usable bearing at all (angle out of AA's 1..360 range, e.g. AND no exit number to
         // synthesize one from) -> base-only schematic, i.e. an empty spoke string, never a throw.
-        // 2026-10 field case: Maps exit 3 at 225 deg (front-left), right-hand traffic.
+        // Maps exit 3 at 225 deg (front-left), right-hand traffic.
         eq("roundabout 225/3 ccw", JunctionSchematic.buildRoundabout(225, 3, true), charStr(176, 240, 32));
         // Left-hand traffic mirrors it: exit 3 on the right, the passed ones left and ahead.
         eq("roundabout 90/3 cw",   JunctionSchematic.buildRoundabout(90, 3, false), charStr(64, 0, 192));

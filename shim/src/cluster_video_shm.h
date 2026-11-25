@@ -5,8 +5,8 @@
  * Single writer, single reader. Since version 4 the frames go into a BYTE ring (arena) of
  * KBCV_ARENA bytes, each frame contiguous, with an index of the last KBCV_INDEX frames. Before,
  * every frame took a fixed 256 000-byte slot: the phone's 1280x720 stream averages ~19 KB a
- * frame, so 93 % of the 6.1 MB ring was empty, and its key frames (up to 281 453 bytes on the
- * car, 2026-11-15) did not fit at all and were dropped. Now 4 MB hold a few seconds of video.
+ * frame, so 93 % of the 6.1 MB ring was empty, and its key frames (up to ~280 KB)
+ * did not fit at all and were dropped. Now 4 MB hold a few seconds of video.
  *
  * Writer (kbcv_put): reserves the bytes - arena_head moves past them BEFORE they are written - then
  * copies the frame and publishes its index entry with a sequence lock (entry.seq is 0 while it is

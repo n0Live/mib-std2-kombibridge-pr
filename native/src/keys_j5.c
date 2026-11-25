@@ -4,11 +4,11 @@
  * The key panel service on the J5 processor (tsd.mibstd2.keypanel) translates the wheel's MQB key
  * code through a fixed table; a code that is not in it never reaches the head unit, but is logged:
  *   "MFW_MQB: mapMfwMqbEvent(): code not found in mapping table, original code: N"
- * (twice: the logger's record and the service's stdout line). View is N = 35 (car 2026-11-10);
+ * (twice: the logger's record and the service's stdout line). View is N = 35;
  * 7 was also seen. The reader thread reads the J5 slogger device over qnet (/net/J5/dev/slog) and
  * looks for that text in the raw records. Only the press is known - no release, no hold.
  *
- * OFF by default since 2026-11-13. Car 2026-11-12/13: read() of /net/J5/dev/slog never returned 0
+ * OFF by default: read() of /net/J5/dev/slog never returned 0
  * and kept returning data (1351484 bytes in 2 s); the old loop did not sleep while data came, so it
  * hammered the J5 slogger over qnet. The J5 also serves touch and keys: the head unit hung and
  * rebooted, also without AA. The reader now
@@ -19,7 +19,7 @@
  *   - stops for good when the same data comes again (KEYS_REPEAT_MAX) or the volume is implausible
  *     (KEYS_FULL_MAX full buffers in a row).
  * "Stops for good" = until DisplayManager restarts; the reason is logged ("keys: ... reader stopped").
- * Not verified on the car: whether the slogger gives the text contiguously in its raw records, and
+ * Unknown: whether the slogger gives the text contiguously in its raw records, and
  * what a read() at the end of the log returns.
  *
  * Results: log lines "keys: ..." and /dev/shmem/aa_wheel_keys "view_presses other_presses

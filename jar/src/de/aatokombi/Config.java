@@ -66,7 +66,7 @@ public final class Config {
         /**
          * When the near manoeuvre is a left/right TURN and the phone's NEXT step (AA steps[1], IPC
          * line 5) is a turn the other way, draw the stock DOUBLE_TURN glyph instead of the plain
-         * turn arrow. Hardware-verified on the AID (2026-10): direction 64 = "left, then right",
+         * turn arrow. On the AID direction 64 = "left, then right",
          * 192 = "right, then left"; there is no same-side variant. AA gives no distance between the
          * two steps, so any second step counts. No navigator sent a second step so far, so this is
          * dormant until one does.

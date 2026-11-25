@@ -57,7 +57,7 @@ arg4,arg5 = the media-source temp spill (sp+0, sp+4)   arg6 = PlaybackSeconds (s
 So the shim declares `m_status(self, src, repeat, repeatOne, a4, a5, playbackSeconds)` and uses the
 last one.
 
-**Refined (2026-10):** the "spill" is a 16-byte record the caller builds at its `sp`, i.e. the
+**Refined:** the "spill" is a 16-byte record the caller builds at its `sp`, i.e. the
 callee's stack arguments — `[sp+0]` State (msg+0x14), `[sp+4]` MediaSource (CoW string, msg+0x10),
 `[sp+8]` PlaybackSeconds, `[sp+0xc]` the bytes Shuffle / Repeat / RepeatOne (+0x1c/+0x1d/+0x1e) plus
 one uninitialised pad byte. `m_status` therefore takes an 8th argument (that packed word) and reads

@@ -735,7 +735,7 @@ static void note_swallowed(u32 id,const u8* payload,u32 len){
 // We speak AA 1.7 and own this endpoint completely: the stock dispatcher is never called, not even
 // for the ids we do not use. It is a 1.3-era parser, and handed a 1.7 payload under an id it thinks
 // it knows it eventually fails and answers the phone "unexpected message" — which the phone answers
-// by tearing the session down, once per route recalculation. Observed on the car; silence the phone
+// by tearing the session down, once per route recalculation. Silence the phone
 // tolerates, an error frame it does not.
 extern "C" __attribute__((used))
 // self/channel stay in the signature: this is a vtable slot, its shape is fixed by libgal.
@@ -831,8 +831,8 @@ extern "C" __attribute__((used)) int mr_queue_outgoing(void* self, u32 ch, const
 }
 
 // Incoming: BatteryStatusNotification (control channel, newer than libgal's 1.3 Controller) is
-// accepted silently. Unhandled, MessageRouter answers it with an "unexpected message" frame; observed
-// on the car twice at a low phone battery, each followed by the session ending within a second.
+// accepted silently. Unhandled, MessageRouter answers it with an "unexpected message" frame; seen
+// at a low phone battery, followed by the session ending within a second.
 // It is a notification — the phone expects no reply.
 extern "C" __attribute__((used)) int mr_route_message(void* self, u32 ch, const void* bufref){
   if((ch&0xff)==0 && bufref){

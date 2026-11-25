@@ -42,11 +42,11 @@ NavigationServiceListener {
     private static final int ZOOM_TYPE_CONTINUOUS_STOP = 5;
 
     /**
-     * EXPERIMENTAL, and not working on the car so far (2026-11): while the phone's map is on the AID,
+     * EXPERIMENTAL, and not working so far: while the phone's map is on the AID,
      * the wheel zoom (BAP MapScale: steps +-1, or continuous 127 / -128 until 0) goes to Android
      * Auto as keys on the cluster input channel instead of to the unit's own map. Every MapScale
-     * request is logged. Car 2026-11-03: the phone ignored KEYCODE_ZOOM_IN/OUT on the cluster input
-     * (196 sent, no zoom); 2026-11-06 the rotary controller did not zoom either (32 sent); mib-
+     * request is logged. The phone ignores KEYCODE_ZOOM_IN/OUT on the cluster input and the rotary
+     * controller as well; mib-
      * cluster-map and mib2q-carplay report that Android Auto's cluster map is not interactive.
      * Set false to leave the zoom to the unit's own map.
      */

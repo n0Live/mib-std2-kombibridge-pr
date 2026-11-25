@@ -75,7 +75,7 @@ NavigationServiceListener {
         try {
             if (ClusterCaps.isNavCapable() && NavState.ACTIVE) {
                 // navsd-shadow delta: with AA's own map on the AID this line stays empty - it is the
-                // plate above the map (trip 2026-11-19: on a straight stretch the unit's own guidance
+                // plate above the map (on a straight stretch the unit's own guidance
                 // sends no turn-to street, and the plate is then gone while the turn widget still
                 // shows the street). The street moves to CurrentPositionInfo, which the widget shows
                 // in its place. KombiMap re-sends both when the AA map comes or goes.

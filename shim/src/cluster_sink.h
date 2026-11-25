@@ -990,7 +990,7 @@ static void cl_send_live_insets(const u32* v){
 // the SDR insets), the matching line of CLUSTER_APP_INSETS_FILE goes out as 0x8009. No app seen yet:
 // the "default" lines. No matching line: the SDR insets again, if a line's insets were sent before.
 // No table: nothing. The manual file CLUSTER_LIVE_INSETS_FILE wins while it exists (for finding the
-// values on the car).
+// values).
 #define CLUSTER_NAV_APP_FILE    "/dev/shmem/aa_nav_app"
 #define CLUSTER_APP_INSETS_FILE "/tsd/var/aatokombi/app-insets"
 #define CLUSTER_TEMPLATE_FILE   "/tsd/var/aatokombi/insets-template"

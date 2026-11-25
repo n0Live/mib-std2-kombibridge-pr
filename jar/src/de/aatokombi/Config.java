@@ -269,8 +269,9 @@ public final class Config {
             /** Menu left, key code 37. */
             public static final int MENU_LEFT = 9;
             /**
-             * EXPERIMENTAL. OK, the right roller's press: no key code, it is caught indirectly. While the
-             * AA map is shown on the cluster, one press steps the mode (no holding).
+             * EXPERIMENTAL. OK, the right roller's press: no key code, it is caught indirectly. On the AA
+             * map or the unit's own map, turn the right roller (the zoom question appears), then one press
+             * of OK steps the mode (no holding). On the unit's map it also turns its auto zoom on.
              */
             public static final int OK = 10;
         }

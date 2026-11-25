@@ -171,7 +171,7 @@ ConfigurationServiceListener {
             int rq = activeRgType_SetGet.rgtype;
             if (rq == 3 && ClusterVideo.mode() == ClusterVideo.MODE_ARROWS) {
                 // the OK on the cluster's "Switch to map?" question, or the unit's map button: the same request
-                de.aatokombi.WheelKeys.okSeen("ActiveRgType rgtype=3 from arrows (OK on the question or the map button)", false);
+                de.aatokombi.WheelKeys.okSeen("ActiveRgType rgtype=3 from arrows (OK on the question or the map button)", false, false);
             }
             if (rq == 0 || rq == 3) {
                 ClusterVideo.switchTo(rq);

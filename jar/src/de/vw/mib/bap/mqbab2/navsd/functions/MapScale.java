@@ -134,9 +134,12 @@ NavigationServiceListener {
                 ClusterVideo.log("MapScale SetGet steps=" + n + " autoZoom=" + n2 + " type=" + n3
                         + " aaVideo=" + ClusterVideo.alive() + (toAA ? " -> AA" : " -> stock"));
                 if (n3 == 3) {
-                    // auto zoom on = the OK of the scale mode (the right roller press), the only trace of that key
-                    // that reaches the unit; with ModeKey.OK it steps the cluster mode instead of zooming
-                    boolean stepped = de.aatokombi.WheelKeys.okSeen("MapScale autoZoom", toAA);
+                    // auto zoom on = the OK of the zoom question (the right roller press), the only trace of that
+                    // key that reaches the unit; with ModeKey.OK it steps the cluster mode: on the AA map instead
+                    // of zooming, on the unit's own map as well as its auto zoom
+                    boolean stockMap = !toAA && ClusterVideo.session()
+                            && ClusterVideo.mode() == ClusterVideo.MODE_STOCK_MAP;
+                    boolean stepped = de.aatokombi.WheelKeys.okSeen("MapScale autoZoom", toAA, stockMap);
                     if (stepped) {
                         propertyListener.statusProperty(this.computeMapScaleStatus(), this);
                         return;

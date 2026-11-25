@@ -86,9 +86,11 @@ public final class ModStateTest {
         // the indirect OK: without ModeKey.OK chosen it only logs
         WheelKeys.takeCycleRequest();
         boolean okChosen = Config.ClusterMap.MODE_KEY == Config.ClusterMap.ModeKey.OK && Config.ClusterMap.MODE_CYCLE;
-        ok("OK seen with the AA map: handled only when OK is the mode key", WheelKeys.okSeen("test", true) == okChosen);
-        ok("OK seen: a cycle only when OK is the mode key", WheelKeys.takeCycleRequest() == okChosen);
-        ok("OK seen without the AA map: never handled", !WheelKeys.okSeen("test", false));
+        ok("OK seen with the AA map: handled only when OK is the mode key", WheelKeys.okSeen("test", true, false) == okChosen);
+        ok("OK seen with the AA map: a cycle only when OK is the mode key", WheelKeys.takeCycleRequest() == okChosen);
+        ok("OK seen with the unit's map: always passed on", !WheelKeys.okSeen("test", false, true));
+        ok("... a cycle only when OK is the mode key", WheelKeys.takeCycleRequest() == okChosen);
+        ok("OK seen without a map: never handled", !WheelKeys.okSeen("test", false, false));
         ok("... and no cycle", !WheelKeys.takeCycleRequest());
     }
 

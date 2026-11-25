@@ -994,6 +994,10 @@ static void cl_send_live_insets(const u32* v){
 #define CLUSTER_NAV_APP_FILE    "/dev/shmem/aa_nav_app"
 #define CLUSTER_APP_INSETS_FILE "/tsd/var/aatokombi/app-insets"
 #define CLUSTER_TEMPLATE_FILE   "/tsd/var/aatokombi/insets-template"
+// Config.ClusterMap.HIDE_AA_GUIDANCE_CARD (-DCLUSTER_HIDE_AA_CARD=1): during route guidance these side
+// insets leave the app 1 px of width (1280 - 639 - 640), so it draws no guidance card.
+#define CLUSTER_NO_CARD_LEFT    639u
+#define CLUSTER_NO_CARD_RIGHT   640u
 static char g_appName[16], g_appTpl[8];
 static u32 g_appSent, g_appGuide;
 static void cl_read_word(const char* path,char* out,u32 outsz){
@@ -1016,7 +1020,9 @@ static void cl_poll_app_insets(u32 fresh){
   static char t[2048]; usize tn=p_fread(t,1,sizeof t-1,f); p_fclose(f); t[tn]=0;   // static: the ticker's stack is small
   u32 v[4];
   if(appins_lookup_tpl(t,app,tpl,(int)guide,v)){
-    if(guide && appins_hide_card(t)){ v[2]=639u; v[3]=640u; }
+#ifdef CLUSTER_HIDE_AA_CARD
+    if(guide){ v[2]=CLUSTER_NO_CARD_LEFT; v[3]=CLUSTER_NO_CARD_RIGHT; }
+#endif
     cl_send_live_insets(v); g_appSent=1; g_cl.appSent++;
   }
   else if(g_appSent){ cl_send_live_insets(g_cl.insets); g_appSent=0; }

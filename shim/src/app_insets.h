@@ -96,18 +96,4 @@ static int appins_lookup(const char* table,const char* app,unsigned v[4]){
   return appins_lookup_tpl(table,app,"",0,v);
 }
 
-// A line "hide-card": while route guidance runs, the side insets are 639 640, so the navigation
-// app has no room for its own guidance card on the cluster. 1 = the line is there.
-static int appins_hide_card(const char* table){
-  const char* p=table;
-  while(*p){
-    char w[16];
-    while(*p==' '||*p=='\t'||*p=='\r'||*p=='\n') p++;
-    if(*p=='#'){ while(*p && *p!='\n') p++; continue; }
-    if(appins_word(p,w,sizeof w) && appins_same(w,"hide-card")) return 1;
-    while(*p && *p!='\n') p++;
-  }
-  return 0;
-}
-
 #endif

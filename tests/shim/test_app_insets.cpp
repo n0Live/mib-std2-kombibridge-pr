@@ -39,8 +39,7 @@ int main(){
     "yandex guide 1 150 2 2\n"
     "yandex medium guide 140 150 400 400\n"
     "google wide 140 265 130 130\n"
-    "google wide guide 140 265 400 130\n"
-    "hide-card\n";
+    "google wide guide 140 265 400 130\n";
   CHECK("default narrow", appins_lookup_tpl(tt,"waze","narrow",0,v) && is(v,140,260,470,470));
   CHECK("default wide", appins_lookup_tpl(tt,"waze","wide",0,v) && is(v,160,260,70,70));
   CHECK("no app seen: default", appins_lookup_tpl(tt,"","medium",0,v) && is(v,140,260,400,400));
@@ -53,9 +52,6 @@ int main(){
   CHECK("google other template: default", appins_lookup_tpl(tt,"google","narrow",0,v) && is(v,140,260,470,470));
   CHECK("no template chosen: only plain lines", appins_lookup_tpl(tt,"waze","",0,v)==0);
   CHECK("unknown template word: plain lines only", appins_lookup_tpl(tt,"yandex","huge",0,v) && is(v,140,200,460,460));
-  CHECK("hide-card found", appins_hide_card(tt));
-  CHECK("no hide-card", !appins_hide_card(table));
-  CHECK("hide-card in a comment is not one", !appins_hide_card("# hide-card\n"));
   CHECK("old lookup ignores template lines", appins_lookup("google wide 1 2 3 4\n","google",v)==0);
   CHECK("last of equal lines wins", appins_lookup_tpl("waze 1 1 1 1\nwaze 2 2 2 2\n","waze","",0,v) && is(v,2,2,2,2));
 

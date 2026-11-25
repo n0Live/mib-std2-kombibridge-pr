@@ -9,7 +9,9 @@
 #                                                wins, else Config.ClusterMap.ENABLED decides
 #   cluster_plate_defines                     -> prints the extra libgal define for
 #                                                Config.ClusterMap.HIDE_PLATE_ON_AA_MAP
-#                                                ("-DCLUSTER_PLATE_HIDDEN=1" or nothing)
+#                                                ("-DCLUSTER_PLATE_HIDDEN=1" or nothing), and for
+#                                                Config.ClusterMap.HIDE_AA_GUIDANCE_CARD
+#                                                ("-DCLUSTER_HIDE_AA_CARD=1" or nothing)
 #   cluster_dhu_defines                       -> prints the extra libgal define for
 #                                                Config.Advanced.DESKTOP_HEAD_UNIT
 #                                                ("-DCLUSTER_DHU=1" or nothing)
@@ -41,7 +43,10 @@ cluster_sink_choice() {
 }
 
 cluster_plate_defines() {
-  [ "$(config_get ClusterMap HIDE_PLATE_ON_AA_MAP "$@")" = "true" ] && echo "-DCLUSTER_PLATE_HIDDEN=1"
+  d=""
+  [ "$(config_get ClusterMap HIDE_PLATE_ON_AA_MAP "$@")" = "true" ] && d="-DCLUSTER_PLATE_HIDDEN=1"
+  [ "$(config_get ClusterMap HIDE_AA_GUIDANCE_CARD "$@")" = "true" ] && d="${d:+$d }-DCLUSTER_HIDE_AA_CARD=1"
+  [ -n "$d" ] && echo "$d"
   return 0
 }
 

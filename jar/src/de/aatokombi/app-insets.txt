@@ -11,9 +11,7 @@
 # guide     the line is only for the time of route guidance
 # The most specific line wins (template, then guide); the app's lines win over the default lines.
 #
-# hide-card: while route guidance runs, the side insets are 639 640, so the app has no room for its
-# own guidance card on the cluster (the cluster's own guidance is shown instead).
-#hide-card
+# Hiding the app's guidance card: Config.ClusterMap.HIDE_AA_GUIDANCE_CARD.
 
 default narrow  140 260 470 470
 default medium  140 260 400 400

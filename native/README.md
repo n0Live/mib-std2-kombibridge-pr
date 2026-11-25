@@ -110,13 +110,14 @@ installs it when the unit has none, or still has an earlier build's default tabl
 default   narrow        140 260 470 470
 yandex    medium guide  140 150 400 400     # only during route guidance
 google    150 260 470 470                   # no template: for all three
-hide-card                                   # during guidance sides 639 640: no app guidance card
 ```
 
 - The template (narrow / medium / wide) is chosen on the AA map with `Config.ClusterMap.INSETS_KEY`
   (zoom or OK) and kept in `/tsd/var/aatokombi/insets-template`. The most specific line wins
   (template, then `guide`); the app's lines win over the `default` lines, which are also used
   before the app is recognised. Guidance = the phone's navigation status ACTIVE or REROUTING.
+- `Config.ClusterMap.HIDE_AA_GUIDANCE_CARD` (a build switch): during guidance the side insets are
+  639 640, so the app draws no guidance card; top and bottom stay those of the table.
 - Detection (`native/src/nav_app.c`, rules in `nav_app_classify.h`): while the table exists and
   the decode mode plays, the cluster display is read with QNX Screen 1 s after the video starts and
   then every 2 s; the colours of a 32x12 grid of the AA window tell the app (each app keeps its own

@@ -13,7 +13,7 @@
  * (RAM: gone after a reboot), so libgal can send the last app's insets at once at the next Start,
  * before the app is seen again.
  * Which display is the cluster: "disp <ID>" in VAR_DIR/px-probe, else the first display that is
- * not 800x480 (car 2026-11-22: ID 6, 1024x384).
+ * not 800x480 (usually ID 6, 1024x384).
  * Crash guard: a RAM marker exists while Screen is being called; found at start, detection is off
  * until the next reboot. Any Screen error switches it off for the rest of the stream.
  */

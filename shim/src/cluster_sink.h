@@ -990,7 +990,7 @@ static void cl_send_live_insets(const u32* v){
 // CLUSTER_NAV_APP_FILE, or the phone starts the video again (it is then back to the SDR insets),
 // that app's line of CLUSTER_APP_INSETS_FILE goes out as 0x8009. An app without a line (and no
 // "default"): the SDR insets again, if an app's insets were sent before. No table: nothing.
-// The manual file CLUSTER_LIVE_INSETS_FILE wins while it exists (for finding the values on the car).
+// The manual file CLUSTER_LIVE_INSETS_FILE wins while it exists (for finding the values).
 #define CLUSTER_NAV_APP_FILE    "/dev/shmem/aa_nav_app"
 #define CLUSTER_APP_INSETS_FILE "/tsd/var/aatokombi/app-insets"
 static char g_appName[16];

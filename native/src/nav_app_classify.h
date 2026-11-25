@@ -3,8 +3,8 @@
  * Pure function, no libc: used by libkb_dm.so (native/src/nav_app.c) and the host test
  * tests/navapp.
  *
- * The apps keep their own palettes, and the cluster shows them unchanged (car 2026-11-22: the
- * colours read back from the composed cluster display were the screenshots' colours to the unit):
+ * The apps keep their own palettes, and the cluster shows them unchanged (the
+ * colours read back from the composed cluster display are the screenshots' colours to the unit):
  *   Google   night background (27,51,75) ~58 %, day (246,244,240)
  *   Waze     always night on the cluster: (41,45,58) ~55 %
  *   Yandex   (Yango is the same engine) night (44,50,68) (46,54,72) (54,65,84) (56,63,90),

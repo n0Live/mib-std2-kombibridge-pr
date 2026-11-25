@@ -3,7 +3,7 @@
 //
 // libkb_dm.so writes the navigation app it sees on the cluster to /dev/shmem/aa_nav_app (a name
 // from native/src/nav_app_classify.h and a newline). The table, /tsd/var/aatokombi/app-insets, is
-// the owner's, edited on the unit:
+// edited on the unit:
 //   # comment
 //   google   150 260 470 470
 //   waze     150 260 470 470

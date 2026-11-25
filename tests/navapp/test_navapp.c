@@ -1,7 +1,7 @@
 /*
  * Host test of native/src/nav_app_classify.h: synthetic sample grids built from each app's
  * palette (no car pictures here: they show real streets). Shares, shifts and the splash follow
- * what the car showed on 2026-11-22.
+ * what the composed cluster display shows.
  */
 #include <stdio.h>
 #include "../../native/src/nav_app_classify.h"

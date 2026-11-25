@@ -111,3 +111,15 @@ that is a bug in the check, and `FORCE=1` is the way round it.
   versions do not talk to each other (stock map); install them together.
 - Log: `/dev/shmem/aatokombi-dm.log` (at 64 KB it becomes `aatokombi-dm.log.1` and a new one starts). Counters (`rd_frames`, `rd_state`, ring waits) also appear in
   libgal's `/dev/shmem/aa_cluster_probe`.
+- Frame capture (DEBUG builds: while `/dev/shmem/aa_debug` exists): the first 90 access units of
+  each decode run, from the key frame on, go to `/dev/shmem/aa_cluster_au_<0..3>.h264` (Annex B).
+  On a PC: `ffmpeg -i aa_cluster_au_0.h264 -frames:v 1 frame.png`.
+- Pixel probe (opt-in, `/tsd/var/aatokombi/px-probe`, empty or `disp <display ID>`): while the
+  decode mode plays, a display is copied with QNX Screen the way the firmware's `screenshot` does
+  it, 1.5 s after the start and then every 5 s. The first copy of each stream saves every display
+  (`/dev/shmem/aa_px_d<ID>.raw`; ID, type and size of each are in the log). The copies compared
+  later come from `disp`, else from the first display that is not 800x480. Such a copy is kept
+  when it is the first of the stream or the picture changed (half of a 16x9 grid moved, at most
+  one copy per 30 s): the grid in the log, the whole picture as `/dev/shmem/aa_px_<0..5>.raw`.
+  `tools/px-raw-to-png.py` makes PNGs of the `.raw` files. If DisplayManager dies during a copy,
+  the probe stays off until the next reboot. Remove the file when done.

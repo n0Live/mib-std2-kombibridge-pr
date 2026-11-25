@@ -216,6 +216,48 @@ static int dec_read_src(unsigned *v, char *last, unsigned lastsz)
     return dec_parse(b, v, 4) == 4 && v[2] && v[3];
 }
 
+/*
+ * Frame capture for offline analysis (notes: nav app detection), only while the trip-dump flag
+ * of DEBUG builds exists: the first AU_CAP_MAX_AUS access units of each decode run, from the key
+ * frame on (SPS+PPS+IDR first), as an Annex-B file /dev/shmem/aa_cluster_au_<n>.h264 (ring of
+ * AU_CAP_FILES, RAM only). On a PC: ffmpeg -i aa_cluster_au_0.h264 -frames:v 1 f.png
+ * (-flags2 +ignorecrop for the whole coded picture instead of the SPS crop).
+ */
+#define AU_CAP_FLAG      "/dev/shmem/aa_debug"
+#define AU_CAP_PATH      "/dev/shmem/aa_cluster_au_"
+#define AU_CAP_FILES     4u
+#define AU_CAP_MAX_AUS   90u
+#define AU_CAP_MAX_BYTES (4u * 1024u * 1024u)
+static int cap_fd = -1;
+static unsigned cap_aus, cap_bytes, cap_runs;
+
+static void cap_begin(void)
+{
+    char name[48], *o;
+    if (cap_fd >= 0 || !exists(AU_CAP_FLAG)) return;
+    o = put(name, AU_CAP_PATH); o = put_u(o, cap_runs & (AU_CAP_FILES - 1u)); o = put(o, ".h264"); *o = 0;
+    cap_runs++;
+    cap_fd = open(name, O_WRONLY | O_CREAT | O_TRUNC, 0644);
+    cap_aus = 0; cap_bytes = 0;
+    if (cap_fd < 0) LOG("dec: capture file not opened");
+}
+
+static void cap_end(void)
+{
+    if (cap_fd < 0) return;
+    close(cap_fd);
+    cap_fd = -1;
+    LOGV("dec: captured access units", cap_aus);
+}
+
+static void cap_add(const uint8_t *au, unsigned size)
+{
+    if (cap_fd < 0) return;
+    if (cap_aus >= AU_CAP_MAX_AUS || cap_bytes + size > AU_CAP_MAX_BYTES) { cap_end(); return; }
+    if (write(cap_fd, au, size) != (ssize_t)size) { cap_end(); return; }
+    cap_aus++; cap_bytes += size;
+}
+
 static void dec_run(void)
 {
     char cfg[64], url[360], *o;
@@ -282,6 +324,7 @@ static void dec_run(void)
         f[0] = 2; f[1] = avc1 ? 0x41564331u : 0x48323634u; f[2] = cw; f[3] = ch; f[4] = 16; f[5] = 30; f[6] = 0; f[7] = 0;
         if (mdev_send(2, f, sizeof(f), NULL, 0) < 0) LOG("dec: format packet failed");
     }
+    cap_begin();
     LOGV("dec: playing, coded width", cw); LOGV("dec: window width", r[2]); LOGV("dec: window height", r[3]);
     i = dec_newest_idr();
     next = i ? i - 1 : kv->write_seq;                 /* start at the newest key frame still in the ring */
@@ -310,6 +353,7 @@ static void dec_run(void)
                 cfg_sent = 1;
                 LOGV("dec: first key frame after ms", now_ms() - start);
             }
+            cap_add(dec_au, size);
             ts = (unsigned long long)now_ms() * 1000ull;
             if (mdev_send(3, &ts, 8, dec_au, size) >= 0) sent++;
         }
@@ -322,6 +366,7 @@ static void dec_run(void)
     if (dec_timeouts) LOGV("dec: send errors/timeouts", dec_timeouts);
     M.stop(ctx);
 done:
+    cap_end();
     kv->rd_alive_ms = 0;
     if (dec_coid >= 0) { name_close(dec_coid); dec_coid = -1; }
     M.destroy(ctx);

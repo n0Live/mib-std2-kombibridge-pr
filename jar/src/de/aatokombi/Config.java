@@ -289,8 +289,8 @@ public final class Config {
         /**
          * The insets of Android Auto's map, per navigation app, come from the table app-insets.txt next
          * to this file (edit it before the build; it is installed on the unit). Each app has three
-         * templates there, narrow / medium / wide, chosen on the AA map with INSETS_KEY. The table also
-         * holds the guidance-only lines and the switch that hides the app's own guidance card.
+         * templates there, narrow / medium / wide, chosen on the AA map with INSETS_KEY, and lines only
+         * for the time of route guidance.
          */
         public static final class InsetsKey {
             private InsetsKey() {}

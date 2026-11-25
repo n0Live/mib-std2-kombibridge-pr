@@ -2,7 +2,9 @@
  * Decompiled with CFR 0.152 from the stock class (MIBHMI-fixed.jar), then changed:
  * navsd-shadow delta (ZOOM_TO_AA): while Android Auto's map is on the AID, the
  * cluster's zoom requests go to the phone as zoom keys (de.aatokombi.ClusterVideo.sendCommand)
- * instead of to the unit's own map. Every request is logged. Otherwise stock.
+ * instead of to the unit's own map, and the status reports auto zoom off (the cluster only
+ * sends "auto zoom on", the OK of its zoom question, when it is off). Every request is logged.
+ * Otherwise stock.
  */
 package de.vw.mib.bap.mqbab2.navsd.functions;
 
@@ -60,11 +62,32 @@ NavigationServiceListener {
     private static final int ZOOM_REPEAT_MS = 400;
     private static final int ZOOM_TYPE_AUTOZOOM = 3;
     private int currentZoomType = 1;
+    private static volatile MapScale INSTANCE = null;
+    private static boolean lastAA;
+
+    /**
+     * The AA map came on or went off the AID: send the status again, so the cluster sees the
+     * auto zoom state that belongs to the map now shown (off on the AA map, the unit's own
+     * value on its map). Any thread; never throws.
+     */
+    public static void aaMapChanged(boolean aa) {
+        if (aa == lastAA) return;
+        lastAA = aa;
+        MapScale i = INSTANCE;
+        if (i == null || !ZOOM_TO_AA) return;
+        try {
+            ClusterVideo.log("MapScale status again: " + (aa ? "AA map, auto zoom reported off" : "unit's map, its own auto zoom"));
+            i.process(-1);
+        } catch (Throwable t) {
+            de.aatokombi.Quiet.note("MapScale#1", t);
+        }
+    }
     private PropertyListener listener;
     static /* synthetic */ Class class$de$vw$mib$bap$mqbab2$generated$navsd$serializer$MapScale_Status;
 
     public BAPEntity init(BAPStageInitializer bAPStageInitializer) {
         this.getNavigationService().addNavigationServiceListener(this, NAVIGATION_LISTENER_IDS);
+        INSTANCE = this;
         return this.computeMapScaleStatus();
     }
 
@@ -207,7 +230,10 @@ NavigationServiceListener {
         NavigationMapScale navigationMapScale = this.getNavigationService().getMapScale();
         mapScale_Status.scale = navigationMapScale.getMapScaleScale();
         mapScale_Status.unit = navigationMapScale.getMapScaleScaleUnit();
-        mapScale_Status.autoZoomState.autoZoomActive = navigationMapScale.getMapScaleAutozoom() == 1;
+        // on the AA map the unit's own auto zoom does not apply: report it off, so the OK of the zoom
+        // question asks for it (and can step the cluster mode); the unit's value itself is never changed
+        mapScale_Status.autoZoomState.autoZoomActive = !(ZOOM_TO_AA && ClusterVideo.alive())
+                && navigationMapScale.getMapScaleAutozoom() == 1;
         return mapScale_Status;
     }
 

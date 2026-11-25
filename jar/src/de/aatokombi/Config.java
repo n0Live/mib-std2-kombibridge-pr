@@ -222,13 +222,20 @@ public final class Config {
          * insets 150 260 470 470 (top bottom left right) instead of 180 260 500 500.
          * Trade-off: the turn widget shows the street only under the FOLLOW_STREET arrow (it then
          * reads CurrentPositionInfo, which carries the street); at a manoeuvre it reads TurnToInfo,
-         * the same as the plate, so it has no street there (trips 2026-11-20/21: every TurnToInfo
-         * field shows on the plate). In the arrows mode and with the unit's own map the plate and
+         * the same as the plate, so it has no street there. In the arrows mode and with the unit's own map the plate and
          * the ETA are stock. Also a BUILD switch: the insets are compiled into the libgal
          * (build.sh reads this), so install the jar and the libgal of the same build.
          * false: the plate always shows.
          */
         public static final boolean HIDE_PLATE_ON_AA_MAP = true;
+
+        /**
+         * While Android Auto's route guidance runs, the navigation app's own guidance card on the AA
+         * map is hidden: the phone is given side insets that leave it no room (the top and bottom stay
+         * those of the insets table). Also a BUILD switch, compiled into the libgal like
+         * HIDE_PLATE_ON_AA_MAP. false: the app shows its card.
+         */
+        public static final boolean HIDE_AA_GUIDANCE_CARD = false;
 
         /**
          * EXPERIMENTAL. The driver's three cluster modes while Android Auto is connected with the
@@ -278,6 +285,35 @@ public final class Config {
 
         /** Which of the ModeKey keys, held, steps the cluster mode (ModeKey.OK: pressed, see there). */
         public static final int MODE_KEY = ModeKey.VOLUME_ROLLER;
+
+        /**
+         * The insets of Android Auto's map, per navigation app, come from the table app-insets.txt next
+         * to this file (edit it before the build; it is installed on the unit). Each app has three
+         * templates there, narrow / medium / wide, chosen on the AA map with INSETS_KEY. The table also
+         * holds the guidance-only lines and the switch that hides the app's own guidance card.
+         */
+        public static final class InsetsKey {
+            private InsetsKey() {}
+
+            /** No key: the template stays INSETS_TEMPLATE (or the one chosen last). */
+            public static final int NONE = 0;
+            /**
+             * Zoom on the AA map (the roller turned, or up / down on a wheel without a roller): zooming
+             * out is the next wider template, zooming in the next narrower one. The phone does not zoom.
+             */
+            public static final int ZOOM = 1;
+            /**
+             * OK in the zoom question on the AA map (see ModeKey.OK): narrow -> medium -> wide -> narrow.
+             * If MODE_KEY is ModeKey.OK too, OK only switches the cluster map, not the template.
+             */
+            public static final int OK = 2;
+        }
+
+        /** Which key changes the insets template (InsetsKey). */
+        public static final int INSETS_KEY = InsetsKey.ZOOM;
+
+        /** The template at the first start; after that the one chosen last is kept on the unit. */
+        public static final int INSETS_TEMPLATE = ClusterInsets.NARROW;
     }
 
     // ===== compatibility and logging ========================================================

@@ -249,6 +249,7 @@ public final class ClusterVideo {
      * visibility (KombiMap).
      */
     public static void poll() {
+        if (Config.ClusterMap.ENABLED) ClusterInsets.install();
         if (WheelKeys.takeCycleRequest()) {
             if (session) {
                 nextMode();

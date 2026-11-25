@@ -95,6 +95,35 @@ library into a harmless process (`LD_PRELOAD=... KB_DM_CHECK=1 ls`) and reads it
 installer's decisions); on a unit it is new - if it refuses a unit where the hook is known to work,
 that is a bug in the check, and `FORCE=1` is the way round it.
 
+## Per-app insets (navigation app detection)
+
+Navigation apps draw their cards in different places, so one set of content insets does not suit
+them all. With the table `/tsd/var/aatokombi/app-insets` on the unit, the hook finds out which app
+draws the cluster map and libgal gives the phone that app's insets at once (0x8009, no reconnection):
+
+```
+# app      top bottom left right   (pixels of the phone's 1280x720 frame)
+google     150 260 470 470
+waze       150 260 470 470
+yandex     150 260 470 470          # Yandex Navigator and Yango
+2gis       150 260 470 470
+default    150 260 470 470          # any other app (optional)
+```
+
+- Detection (`native/src/nav_app.c`, rules in `nav_app_classify.h`): while the table exists and
+  the decode mode plays, the cluster display is read with QNX Screen 1 s after the video starts and
+  then every 2 s; the colours of a 32x12 grid of the AA window tell the app (each app keeps its own
+  palette on the cluster). An app seen twice in a row is written to `/dev/shmem/aa_nav_app`; the
+  Android Auto splash and pictures that match no app change nothing. The last app is kept across
+  reconnections, so its insets go out right at the next start. Log lines `nav: ...`.
+- libgal (`shim/src/cluster_sink.h`, `shim/src/app_insets.h`) sends the app's line, else the
+  `default` line, else (if an app's insets were sent before) the insets of the connection. The
+  table is read when the app changes and at every start of the video.
+- Finding the values: `echo "150 260 470 470" > /dev/shmem/aa_cluster_insets` sends insets at once
+  and wins over the table while the file exists; remove it to return to the table.
+- No table: no detection, nothing changes. A crash during a Screen call switches detection off
+  until the next reboot.
+
 ## Off switches and diagnostics
 
 - An SD card with an empty file `aatokombi-video-disable`, or `/tsd/var/aatokombi/video-off`:
@@ -111,3 +140,15 @@ that is a bug in the check, and `FORCE=1` is the way round it.
   versions do not talk to each other (stock map); install them together.
 - Log: `/dev/shmem/aatokombi-dm.log` (at 64 KB it becomes `aatokombi-dm.log.1` and a new one starts). Counters (`rd_frames`, `rd_state`, ring waits) also appear in
   libgal's `/dev/shmem/aa_cluster_probe`.
+- Frame capture (DEBUG builds: while `/dev/shmem/aa_debug` exists): the first 90 access units of
+  each decode run, from the key frame on, go to `/dev/shmem/aa_cluster_au_<0..3>.h264` (Annex B).
+  On a PC: `ffmpeg -i aa_cluster_au_0.h264 -frames:v 1 frame.png`.
+- Pixel probe (opt-in, `/tsd/var/aatokombi/px-probe`, empty or `disp <display ID>`): while the
+  decode mode plays, a display is copied with QNX Screen the way the firmware's `screenshot` does
+  it, 1.5 s after the start and then every 5 s. The first copy of each stream saves every display
+  (`/dev/shmem/aa_px_d<ID>.raw`; ID, type and size of each are in the log). The copies compared
+  later come from `disp`, else from the first display that is not 800x480. Such a copy is kept
+  when it is the first of the stream or the picture changed (half of a 16x9 grid moved, at most
+  one copy per 30 s): the grid in the log, the whole picture as `/dev/shmem/aa_px_<0..5>.raw`.
+  `tools/px-raw-to-png.py` makes PNGs of the `.raw` files. If DisplayManager dies during a copy,
+  the probe stays off until the next reboot. Remove the file when done.

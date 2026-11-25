@@ -9,6 +9,7 @@ jar/lib/*.jar
 jar/lib/*.jxe.sha256
 jar/lib/*.jxe
 shim/lib/*.so
+native/dm-dump/
 *.patched.so
 
 # distribution outputs — patched firmware binary must never be published; built locally

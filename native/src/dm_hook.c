@@ -21,13 +21,15 @@
  * mst2-cluster-nav, native/src/dm/dm.c, Anton Perk, CC BY-NC-SA 4.0): the same seam, the stock
  * frames handed back to the encoder, start at an IDR, the ring wait in MostSink, the call-site
  * checks. Written anew for Android Auto and this repository's shared memory.
- * Firmware facts (re-verified on the 0480 dump):
- *   libOpenMAXAL.so.1 sha256 c31fe983...: mmfbq_get 0x893c, mmfbq_done 0x8b9c,
- *     mmfbq_get_and_wait 0x8e4c; BufferQueueGetAndWait calls it at 0x1ac38, returns to 0x1ac3c
- *     (pop {r4, pc}); queue: head element at +0, mutex +0x10, cond +0x18, flush flag +0x2c;
- *     element: next at +0x18, data at +4, size at +8 (what the reader hands to TsEncoder).
- *   displaymanager sha256 932efd26...: MostSink::write "bl RingIO::writeAquire" at 0x126f74,
- *     returning to "subs sb, r0, #0" at 0x126f78.
+ * Firmware facts (the addresses are in dm_offsets.h: the one in native/include is firmware 0480,
+ * tools/dm_offsets.py makes another from a dump of the files, native/build.sh DM_DUMP=<folder>):
+ *   libOpenMAXAL.so.1: mmfbq_get, mmfbq_done, mmfbq_get_and_wait; the call of mmfbq_get_and_wait in
+ *     BufferQueueGetAndWait returns to OMX_READER_RETURN; queue: head element at +0, mutex +0x10,
+ *     cond +0x18, flush flag +0x2c; element: next at +0x18, data at +4, size at +8 (what the reader
+ *     hands to TsEncoder).
+ *   displaymanager: MostSink::write's "bl RingIO::writeAquire" at MOST_SINK_CALL, returning to
+ *     MOST_SINK_RETURN.
+ * Both files are checked word for word when the hook starts (the words are in dm_offsets.h too).
  * Any mismatch: nothing is replaced (logged once).
  *
  * Safety: kill switch (file aatokombi-video-disable on any mounted SD card, or
@@ -40,19 +42,12 @@
 
 #define EXPORT __attribute__((visibility("default")))
 
+#include "dm_offsets.h"
+
 #define OMX_LIB             "libOpenMAXAL.so.1"
-#define OMX_GET             0x893cu
-#define OMX_DONE            0x8b9cu
-#define OMX_GET_AND_WAIT    0x8e4cu
-#define OMX_READER_RETURN   0x1ac3cu
-#define ARM_POP_R4_PC       0xe8bd8010u
 
 #define COMMON_LIB          "libtsd.common.so"
 #define RING_ACQUIRE        "_ZN3tsd6common9messaging6RingIO11writeAquireERPvRjb"
-#define MOST_SINK_CALL      0x126f74u
-#define MOST_SINK_RETURN    0x126f78u
-#define ARM_BL_ACQUIRE      0xebff9ffcu
-#define ARM_SUBS_SB_R0      0xe2509000u
 #define RING_WAIT_MS        300u
 #define IDR_FALLBACK_MS     1000u
 
@@ -228,7 +223,7 @@ static uintptr_t omx_layout(uintptr_t get_and_wait, uintptr_t get, uintptr_t don
 {
     uintptr_t base = get_and_wait - OMX_GET_AND_WAIT;
     if (get == base + OMX_GET && done == base + OMX_DONE &&
-        *(const uint32_t *)(base + OMX_READER_RETURN) == ARM_POP_R4_PC &&
+        *(const uint32_t *)(base + OMX_READER_RETURN) == OMX_RETURN_WORD &&
         (*(const uint32_t *)(base + OMX_READER_RETURN - 4) & 0x0f000000u) == 0x0b000000u)
         return base;
     return 0;
@@ -254,7 +249,7 @@ static void resolve(void)
     base = omx_layout((uintptr_t)real_get_and_wait, (uintptr_t)real_get, (uintptr_t)real_done);
     if (base) {
         reader_return = base + OMX_READER_RETURN;
-        LOG("libOpenMAXAL 0480 layout confirmed");
+        LOG("libOpenMAXAL layout confirmed");
     } else {
         LOG("libOpenMAXAL build differs: cluster video stays stock");
     }
@@ -553,8 +548,8 @@ EXPORT int ring_acquire(void *ring, void **p, unsigned *n, int partial)
     r = real_acquire(ring, p, n, partial);
     if (r || !phone || from != MOST_SINK_RETURN) { ring_stalled = ring_stalled && !r; return r; }
     if (most_sink_ok < 0) {
-        most_sink_ok = *(const uint32_t *)MOST_SINK_CALL == ARM_BL_ACQUIRE &&
-                       *(const uint32_t *)MOST_SINK_RETURN == ARM_SUBS_SB_R0;
+        most_sink_ok = *(const uint32_t *)MOST_SINK_CALL == MOST_SINK_CALL_WORD &&
+                       *(const uint32_t *)MOST_SINK_RETURN == MOST_SINK_RETURN_WORD;
         if (!most_sink_ok) LOG("MostSink call site differs: ring not waited for");
     }
     if (!most_sink_ok || ring_stalled) return r;
@@ -638,7 +633,7 @@ static void kb_dm_check(const char *dm_bin)
         omx = (gw && g && d && omx_layout(gw, g, d)) ? 1 : 2;
     }
     if (dm_bin && *dm_bin && elf_word(dm_bin, MOST_SINK_CALL, &w0) && elf_word(dm_bin, MOST_SINK_RETURN, &w1))
-        most = (w0 == ARM_BL_ACQUIRE && w1 == ARM_SUBS_SB_R0) ? 1 : 2;
+        most = (w0 == MOST_SINK_CALL_WORD && w1 == MOST_SINK_RETURN_WORD) ? 1 : 2;
     else if (dm_bin && *dm_bin && exists(dm_bin))
         most = 2;                                   /* readable, but nothing at those addresses */
     h = dlopen("libmmrndclient.so.1", RTLD_LAZY);
@@ -665,6 +660,6 @@ EXPORT void kb_dm_init(void)
         kb_dm_check(getenv("KB_DM_BIN"));
         return;
     }
-    LOG("loaded");
+    LOG("loaded, offsets for " DM_OFFSETS_NOTE);
     guard_init();
 }

@@ -5,6 +5,14 @@
 #
 #   .\build.bat <MIBHMI.jxe> <stock libext.google.gal.receiver.so> [outdir=dist]
 #   .\build.bat <MIBHMI.jxe> - [outdir]      jar only (keep the libgal already on the unit)
+#   .\build.bat <MIBHMI.jxe> <libgal> [outdir] DM_DUMP=<folder>
+#                                            libkb_dm.so for THIS firmware: a folder with the unit's
+#                                            libOpenMAXAL.so.1 and tsd.mibstd2.system.displaymanager
+#                                            (found below it by name). DM_DUMP=<folder> may stand
+#                                            anywhere among the arguments, or be $env:DM_DUMP.
+#                                            Without it a folder dialog asks for the dump; Cancel
+#                                            builds libkb_dm.so for firmware 0480. DM_DUMP=- skips the
+#                                            question.
 #
 # Started by double-click, it asks for both files in standard Open dialogs and opens the output
 # folder when done. Dropping both files onto build.bat works too, in either order.
@@ -40,6 +48,24 @@ function Select-InputFile([string]$title, [string]$filter) {
     }
     if ($result -ne [System.Windows.Forms.DialogResult]::OK) { throw 'No file selected.' }
     return $dialog.FileName
+}
+
+# The dump of the unit's libOpenMAXAL.so.1 and DisplayManager binary (libkb_dm.so is built for that
+# firmware). Cancelling - or an empty answer - means: the default, firmware 0480.
+function Select-DumpFolder {
+    Write-Host ' Folder with the dump of libOpenMAXAL.so.1 and tsd.mibstd2.system.displaymanager (Cancel = firmware 0480)'
+    try {
+        Add-Type -AssemblyName System.Windows.Forms
+        $dialog = New-Object System.Windows.Forms.FolderBrowserDialog
+        $dialog.Description = 'Folder with the dump of libOpenMAXAL.so.1 and tsd.mibstd2.system.displaymanager. Cancel builds libkb_dm.so for firmware 0480.'
+        $owner = New-Object System.Windows.Forms.Form -Property @{ TopMost = $true }
+        $result = $dialog.ShowDialog($owner)
+        $owner.Dispose()
+        if ($result -ne [System.Windows.Forms.DialogResult]::OK) { return '' }
+        return $dialog.SelectedPath
+    } catch {
+        return (Read-Host ' Drag the folder here, or press Enter to skip').Trim().Trim('"')
+    }
 }
 
 # Native tools write progress to stderr; keep Windows PowerShell from turning it into errors.
@@ -124,7 +150,13 @@ function Wait-DockerEngine([int]$seconds) {
 }
 
 try {
-    $jxe, $gal, $out = $args
+    # DM_DUMP=<folder> may stand anywhere among the arguments; the others are positional.
+    $dmDump = $env:DM_DUMP
+    $positional = @()
+    foreach ($a in $args) {
+        if ($a -like 'DM_DUMP=*') { $dmDump = $a.Substring(8) } else { $positional += $a }
+    }
+    $jxe, $gal, $out = $positional
     $interactive = $args.Count -eq 0
     # Explorer passes dropped files in no particular order.
     if ($jxe -like '*.so' -and $gal -like '*.jxe') { $jxe, $gal = $gal, $jxe }
@@ -145,6 +177,17 @@ try {
     if (-not $jarOnly) { $gal = (Resolve-Path -LiteralPath $gal).Path }
     New-Item -ItemType Directory -Path $out -Force | Out-Null
     $out = (Resolve-Path -LiteralPath $out).Path
+    if ([string]::IsNullOrEmpty($dmDump) -and -not $jarOnly -and [Environment]::UserInteractive) { $dmDump = Select-DumpFolder }
+    if ($dmDump -eq '-') { $dmDump = '' }
+    $dmFiles = @()
+    if ($dmDump) {
+        if (-not (Test-Path -LiteralPath $dmDump -PathType Container)) { throw "The dump folder does not exist: $dmDump" }
+        foreach ($name in @('libOpenMAXAL.so.1', 'tsd.mibstd2.system.displaymanager')) {
+            $hit = Get-ChildItem -LiteralPath $dmDump -Recurse -File -Filter $name | Select-Object -First 1
+            if (-not $hit) { throw "$name is not below $dmDump" }
+            $dmFiles += $hit.FullName
+        }
+    }
 
     if (-not (Find-Docker)) {
         Write-Host 'Docker is not installed: the build runs in the Linux containers of Docker Desktop.'
@@ -236,9 +279,27 @@ try {
     $clusterSink, $clusterSinkFrom = $choice -split '\|', 2
     Write-Host "  AA map on the AID ............... CLUSTER_SINK=$clusterSink (from $clusterSinkFrom)"
 
+    # libkb_dm.so for the firmware of a dump: its two files are staged inside the repository
+    # (native/dm-dump, ignored by git) where the container sees them.
+    $dmEnv = ''
+    $dmStage = Join-Path $work 'native/dm-dump'
+    if (Test-Path -LiteralPath $dmStage) { Remove-Item -LiteralPath $dmStage -Recurse -Force }
+    if ($dmFiles.Count -gt 0) {
+        if ($clusterSink -eq '1' -and -not $jarOnly) {
+            New-Item -ItemType Directory -Path $dmStage | Out-Null
+            foreach ($f in $dmFiles) { Copy-Item -LiteralPath $f -Destination $dmStage -Force }
+            $dmEnv = '/work/native/dm-dump'
+            Write-Host "  libkb_dm.so addresses ........... from the dump $dmDump"
+        } else {
+            Write-Host '  (dump folder ignored: this build has no libkb_dm.so)'
+        }
+    } else {
+        Write-Host '  libkb_dm.so addresses ........... firmware 0480 (give a dump folder for another firmware)'
+    }
+
     # 3) build all artifacts in the toolchain container; the host tests run there too
     Write-Host '==> [3/4] running build in container'
-    $buildEnv = @('-e', "CLUSTER_SINK=$clusterSink", '-e', "JAR_ONLY=$(if ($jarOnly) { '1' } else { '0' })") +
+    $buildEnv = @('-e', "CLUSTER_SINK=$clusterSink", '-e', "JAR_ONLY=$(if ($jarOnly) { '1' } else { '0' })", '-e', "DM_DUMP=$dmEnv") +
         @(Get-SwitchArgs @('VIDEO_PROBE', 'VIDEO_PROBE_DEEP', 'SKIP_TESTS', 'CLUSTER_DEFINES', 'ALLOW_SHADOW_MISMATCH'))
     if ((Invoke-Native { docker run --rm -v "${work}:/work" -w /work -e HOME=/tmp @buildEnv $image `
             sh /work/docker/entrypoint.sh }) -ne 0) {

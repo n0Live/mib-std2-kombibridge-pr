@@ -69,9 +69,29 @@ the unit resets. The installer copies and compares the file before it edits `cpu
 
 ## Which firmware builds the hook supports, and how you find out
 
-The hook is tied to one build of two files (firmware 0480): the buffer-queue functions of
-`libOpenMAXAL.so.1` with the reader's call site, and - for the MOST ring wait of the pass-through
-mode - one call site in the DisplayManager binary. It never assumes: inside DisplayManager it
+The hook is tied to one build of two files: the buffer-queue functions of `libOpenMAXAL.so.1` with
+the reader's call site, and - for the MOST ring wait of the pass-through mode - one call site in the
+DisplayManager binary. Their addresses are in `include/dm_offsets.h`, which is firmware 0480. For
+another firmware the build makes that header itself from a **dump of the two files**
+(`/usr/lib/libOpenMAXAL.so.1` and `/tsd/bin/displaymanager/tsd.mibstd2.system.displaymanager`, in one
+folder, found below it by name):
+
+    ./build.sh MIBHMI.jxe libext.google.gal.receiver.so dist DM_DUMP=/path/to/dump   # Linux / macOS
+    DM_DUMP=/path/to/dump ./build.sh MIBHMI.jxe libext.google.gal.receiver.so        # the same, as a variable
+    .\build.bat MIBHMI.jxe libext.google.gal.receiver.so dist DM_DUMP=C:\path\to\dump   # Windows
+    DM_DUMP=/path/to/dump ./native/build.sh                                          # the library alone
+
+`DM_DUMP=<folder>` may stand anywhere among the arguments. `build.bat` without it asks for the folder
+in a dialog (Cancel builds for firmware 0480; `DM_DUMP=-` skips the question).
+
+`tools/dm_offsets.py` finds the places by structure (the exported `mmfbq_*` symbols, the call inside
+`BufferQueueGetAndWait`, the PLT stub and the one caller of `RingIO::writeAquire`), also writes the
+instruction words found there, and the build output names the two files the library was built for;
+the hook logs the same at start (`loaded, offsets for libOpenMAXAL ..., displaymanager ...`). It
+fails with a message when it cannot find a place unambiguously. What it cannot read from the files -
+the layout of the queue and its elements - is still assumed; a changed layout shows as a wrong
+picture on the unit, not as an error. Tested against the 0480 dump (the result is equal to the
+default header) and on made-up ELF files (`tests/dmoffsets`). The hook never assumes: inside DisplayManager it
 compares them with what it knows and, on any difference, replaces nothing (log line
 `libOpenMAXAL build differs: cluster video stays stock`). An unsupported firmware therefore gets
 the stock cluster map, not a crash.
@@ -91,7 +111,7 @@ library into a harmless process (`LD_PRELOAD=... KB_DM_CHECK=1 ls`) and reads it
 | `ring` | `RingIO::writeAquire` found | pass-through ring wait unavailable |
 
 `FORCE=1 sh install_dm_hook.sh ...` installs regardless. After the reboot the log must say
-`libOpenMAXAL 0480 layout confirmed`. The check has been run on a host only (the ELF reader and the
+`libOpenMAXAL layout confirmed`. The check has been run on a host only (the ELF reader and the
 installer's decisions); on a unit it is new - if it refuses a unit where the hook is known to work,
 that is a bug in the check, and `FORCE=1` is the way round it.
 

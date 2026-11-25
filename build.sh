@@ -5,6 +5,8 @@
 #
 #   ./build.sh <MIBHMI.jxe> <stock libext.google.gal.receiver.so> [outdir=dist]
 #   ./build.sh <MIBHMI.jxe> - [outdir]      jar only (keep the libgal already on the unit)
+#   ./build.sh <MIBHMI.jxe> <libgal> [outdir] DM_DUMP=<folder>
+#                                           libkb_dm.so for THIS firmware (see below)
 #
 # The host tests run after the build (docker/entrypoint.sh); a failed test stops it before anything
 # is collected. SKIP_TESTS=1 skips them.
@@ -15,6 +17,14 @@
 # Inputs (from the unit, dumped via the toolbox "Dump AAKombi files" menu item):
 #   MIBHMI.jxe                          the HMI executable (dumped from /tsd/hmi/ifs/)
 #   libext.google.gal.receiver.so       the STOCK GAL library (dumped from /tsd/lib/sal/gal/)
+#
+#   DM_DUMP=<folder>  optional; anywhere among the arguments, or as an environment variable.
+#                                       A folder with the unit's libOpenMAXAL.so.1
+#                                       (/usr/lib/) and DisplayManager binary
+#                                       tsd.mibstd2.system.displaymanager (/tsd/bin/displaymanager/),
+#                                       the files below it found by name. libkb_dm.so is tied to the
+#                                       addresses in those two files: tools/dm_offsets.py finds them
+#                                       in the dump. Without a folder it is built for firmware 0480.
 #
 # Outputs (copy straight onto the SD):
 #   <outdir>/AAtoKombi.jar                  -> custom/java/AAtoKombi.jar
@@ -30,12 +40,30 @@ cd "$(dirname "$0")"
 
 IMAGE="aatokombi-build"
 
+# NAME=value arguments (DM_DUMP=<folder>) may stand anywhere; the rest are the positional arguments
+DM_DUMP="${DM_DUMP:-}"
+POS=()
+for a in "$@"; do
+  case "$a" in
+    DM_DUMP=*) DM_DUMP="${a#DM_DUMP=}" ;;
+    *)         POS+=("$a") ;;
+  esac
+done
+set -- ${POS[@]+"${POS[@]}"}
 JXE="${1:-}"; GAL="${2:-}"; OUT="${3:-dist}"
-usage(){ echo "usage: ./build.sh <MIBHMI.jxe> <stock libext.google.gal.receiver.so | -> [outdir]"; exit 1; }
+usage(){ echo "usage: ./build.sh <MIBHMI.jxe> <stock libext.google.gal.receiver.so | -> [outdir] [DM_DUMP=<dump folder>]"; exit 1; }
 [ -n "$JXE" ] && [ -f "$JXE" ] || usage
 JAR_ONLY=0
 if [ -z "$GAL" ] || [ "$GAL" = "-" ]; then JAR_ONLY=1; else [ -f "$GAL" ] || usage; fi
 command -v docker >/dev/null || { echo "ERROR: docker is required"; exit 1; }
+
+DMDUMP="$DM_DUMP"
+if [ -n "$DMDUMP" ]; then
+  [ -d "$DMDUMP" ] || { echo "ERROR: the dump folder does not exist: $DMDUMP"; exit 1; }
+  for f in libOpenMAXAL.so.1 tsd.mibstd2.system.displaymanager; do
+    [ -n "$(find "$DMDUMP" -name "$f" -type f -print -quit)" ] || { echo "ERROR: $f is not below $DMDUMP"; exit 1; }
+  done
+fi
 
 abspath(){ ( cd "$(dirname "$1")" && printf '%s/%s\n' "$(pwd)" "$(basename "$1")"; ); }
 JXE="$(abspath "$JXE")"; [ "$JAR_ONLY" = "1" ] || GAL="$(abspath "$GAL")"
@@ -95,12 +123,31 @@ if [ -n "$STALE" ]; then
   docker run --rm -v "$PWD":/work -w /work "$IMAGE" rm -rf $STALE
 fi
 
+# libkb_dm.so for the firmware of a dump: the two files it depends on are staged inside the repo
+# (native/dm-dump, ignored by git) where the container sees them.
+DM_ENV=""
+rm -rf native/dm-dump
+if [ -n "$DMDUMP" ]; then
+  if [ "${CLUSTER_SINK:-0}" = "1" ] && [ "$JAR_ONLY" != "1" ]; then
+    mkdir -p native/dm-dump
+    for f in libOpenMAXAL.so.1 tsd.mibstd2.system.displaymanager; do
+      cp -f "$(find "$DMDUMP" -name "$f" -type f -print -quit)" native/dm-dump/
+    done
+    DM_ENV="/work/native/dm-dump"
+    echo "  libkb_dm.so addresses ........... from the dump $DMDUMP"
+  else
+    echo "  (dump folder ignored: this build has no libkb_dm.so)"
+  fi
+else
+  echo "  libkb_dm.so addresses ........... firmware 0480 (give a dump folder for another firmware)"
+fi
+
 # 3) build BOTH artifacts in the toolchain container (image cached after the first run)
 echo "==> [3/4] running build in container"
 docker run --rm -v "$PWD":/work -w /work --user "$(id -u):$(id -g)" \
   -e HOME=/tmp -e VIDEO_PROBE="${VIDEO_PROBE:-0}" -e VIDEO_PROBE_DEEP="${VIDEO_PROBE_DEEP:-0}" \
   -e CLUSTER_SINK="$CLUSTER_SINK" -e JAR_ONLY="$JAR_ONLY" -e SKIP_TESTS="${SKIP_TESTS:-0}" \
-  -e CLUSTER_DEFINES="${CLUSTER_DEFINES:-}" \
+  -e CLUSTER_DEFINES="${CLUSTER_DEFINES:-}" -e DM_DUMP="$DM_ENV" \
   -e ALLOW_SHADOW_MISMATCH="${ALLOW_SHADOW_MISMATCH:-0}" \
   "$IMAGE" /work/docker/entrypoint.sh
 

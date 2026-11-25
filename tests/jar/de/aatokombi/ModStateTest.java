@@ -107,7 +107,7 @@ public final class ModStateTest {
         ok("no table on the unit: install", ClusterInsets.replaceTable(null, b));
         ok("the same default: nothing to write", !ClusterInsets.replaceTable(b, b));
         ok("an older default: replaced", ClusterInsets.replaceTable(ClusterInsets.HEADER + " old\nx 1 2 3 4\n", b));
-        ok("the owner's table (no header): kept", !ClusterInsets.replaceTable("google 1 2 3 4\n", b));
+        ok("a table without the header: kept", !ClusterInsets.replaceTable("google 1 2 3 4\n", b));
         int t = ClusterInsets.current();
         ok("the first template is the configured one", t == Config.ClusterMap.INSETS_TEMPLATE);
         ClusterInsets.set(ClusterInsets.NARROW);

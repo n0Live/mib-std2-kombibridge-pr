@@ -229,7 +229,7 @@ static ClGeom g_geo = { 0u, CLUSTER_RESOLUTION, 800u, 480u,
 #define CLUSTER_FRAME_RATE 2            // VideoFrameRateType 2 = 30 fps
 #endif
 #ifndef CLUSTER_DENSITY
-#define CLUSTER_DENSITY 125             // 12.3" 1440x540 cockpit panel, car-tested on MHI2
+#define CLUSTER_DENSITY 125
 #endif
 #ifndef CLUSTER_DECODER_DEPTH
 #define CLUSTER_DECODER_DEPTH 3

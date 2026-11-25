@@ -102,7 +102,7 @@ public final class WheelKeys {
     /**
      * The driver's OK (right roller press), seen indirectly: the cluster asks the unit for something
      * only the OK produces (source: "MapScale autoZoom" or "ActiveRgType rgtype=3"). Always logged,
-     * so a car log shows whether it comes. With Config.ClusterMap.ModeKey.OK chosen, the press asks
+     * so the log shows whether it comes. With Config.ClusterMap.ModeKey.OK chosen, the press asks
      * for the next cluster mode when the AA map (aaMap) or the unit's own map (stockMap) is shown.
      * Returns true only on the AA map: the caller must not pass the request on there. On the unit's
      * map the request still goes to it (its auto zoom comes on as well). Any thread; never throws.

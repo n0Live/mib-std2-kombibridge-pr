@@ -14,8 +14,9 @@ cd /work
 cluster_sink_choice
 export CLUSTER_SINK
 # compiled into the libgal: the AA map's insets follow Config.ClusterMap.HIDE_PLATE_ON_AA_MAP, the
-# head unit identity Config.Advanced.DESKTOP_HEAD_UNIT
-CLUSTER_DEFINES="${CLUSTER_DEFINES:-} $(cluster_plate_defines) $(cluster_dhu_defines)"
+# head unit identity Config.Advanced.DESKTOP_HEAD_UNIT, the densities Config.ClusterMap.DPI and
+# Config.Advanced.HEAD_UNIT_DPI
+CLUSTER_DEFINES="${CLUSTER_DEFINES:-} $(cluster_plate_defines) $(cluster_dhu_defines) $(cluster_dpi_defines)"
 export CLUSTER_DEFINES
 echo "==> AA map on the AID: CLUSTER_SINK=$CLUSTER_SINK (from $CLUSTER_SINK_FROM)"
 
@@ -54,6 +55,7 @@ else
   run_test "protocol decoders, app insets (tests/shim)" /work/tests/shim/run.sh
   run_test "cluster video ring (tests/ring)" /work/tests/ring/run.sh
   run_test "nav app classifier (tests/navapp)" /work/tests/navapp/run.sh
+  run_test "display density (tests/sdr)"     /work/tests/sdr/run.sh
   run_test "jar (tests/jar)"                 /work/tests/jar/run.sh
   run_test "shadow check (tests/shadows)"    /work/tests/shadows/run.sh
   if [ "$SHIM_BUILT" = "1" ]; then

@@ -12,6 +12,9 @@
 #                                                ("-DCLUSTER_PLATE_HIDDEN=1" or nothing), and for
 #                                                Config.ClusterMap.HIDE_AA_GUIDANCE_CARD
 #                                                ("-DCLUSTER_HIDE_AA_CARD=1" or nothing)
+#   cluster_dpi_defines                       -> prints the libgal defines for Config.ClusterMap.DPI
+#                                                and Config.Advanced.HEAD_UNIT_DPI
+#                                                ("-DCLUSTER_DENSITY=<n> -DMAIN_DENSITY=<n>")
 #   cluster_dhu_defines                       -> prints the extra libgal define for
 #                                                Config.Advanced.DESKTOP_HEAD_UNIT
 #                                                ("-DCLUSTER_DHU=1" or nothing)
@@ -52,5 +55,15 @@ cluster_plate_defines() {
 
 cluster_dhu_defines() {
   [ "$(config_get Advanced DESKTOP_HEAD_UNIT "$@")" = "true" ] && echo "-DCLUSTER_DHU=1"
+  return 0
+}
+
+cluster_dpi_defines() {
+  d=""
+  c="$(config_get ClusterMap DPI "$@")"
+  h="$(config_get Advanced HEAD_UNIT_DPI "$@")"
+  case "$c" in ''|*[!0-9]*) ;; *) d="-DCLUSTER_DENSITY=$c" ;; esac
+  case "$h" in ''|*[!0-9]*) ;; *) d="${d:+$d }-DMAIN_DENSITY=$h" ;; esac
+  [ -n "$d" ] && echo "$d"
   return 0
 }

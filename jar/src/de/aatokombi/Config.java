@@ -231,6 +231,13 @@ public final class Config {
         public static final boolean HIDE_PLATE_ON_AA_MAP = true;
 
         /**
+         * The display density (dpi) the phone is told for the cluster: it sizes the AA map's cards,
+         * text and icons by it. More = bigger. A BUILD switch, compiled into the libgal like
+         * HIDE_PLATE_ON_AA_MAP.
+         */
+        public static final int DPI = 125;
+
+        /**
          * EXPERIMENTAL. The driver's three cluster modes while Android Auto is connected with the
          * CLUSTER_SINK libgal: the unit's map/arrows button (menu "Navigation") walks
          *   AA map -> arrows -> the unit's own map -> arrows -> AA map
@@ -288,6 +295,14 @@ public final class Config {
          * car. Not verified that current Android Auto versions still honour it.
          */
         public static final boolean DESKTOP_HEAD_UNIT = false;
+
+        /**
+         * The display density (dpi) the phone is told for the head unit's screen: Android Auto sizes
+         * its UI there by it. More = bigger. 0 = the unit's own value. Compiled into the libgal, and
+         * only into the one with the AA map on the AID (ClusterMap.ENABLED), like DESKTOP_HEAD_UNIT;
+         * the unit's own value is in /dev/shmem/aa_cluster_probe (main_dpi_stock).
+         */
+        public static final int HEAD_UNIT_DPI = 0;
 
         /**
          * Log verbosity, compiled into the jar: MIBLogger.TRACE | DEBUG | INFO | ERROR | SILENT.

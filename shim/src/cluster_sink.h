@@ -228,8 +228,15 @@ static ClGeom g_geo = { 0u, CLUSTER_RESOLUTION, 800u, 480u,
 #ifndef CLUSTER_FRAME_RATE
 #define CLUSTER_FRAME_RATE 2            // VideoFrameRateType 2 = 30 fps
 #endif
+// The cluster's display density (dpi) for the phone: Config.ClusterMap.DPI (build.sh passes
+// -DCLUSTER_DENSITY).
 #ifndef CLUSTER_DENSITY
-#define CLUSTER_DENSITY 125             // 12.3" 1440x540 cockpit panel, car-tested on MHI2
+#define CLUSTER_DENSITY 125
+#endif
+// The head unit screen's density in the main video sink: Config.Advanced.HEAD_UNIT_DPI
+// (-DMAIN_DENSITY); 0 = the unit's own value, unchanged.
+#ifndef MAIN_DENSITY
+#define MAIN_DENSITY 0
 #endif
 #ifndef CLUSTER_DECODER_DEPTH
 #define CLUSTER_DECODER_DEPTH 3
@@ -239,6 +246,7 @@ static ClGeom g_geo = { 0u, CLUSTER_RESOLUTION, 800u, 480u,
 #endif
 
 #include "cluster_video_shm.h"
+#include "sdr_density.h"
 static struct kbcv* g_kv;              // cluster video shared memory, mapped on the first Start
 static volatile u32 g_focusOn;         // 1 = PROJECTED granted on the cluster channel
 static u32 g_guideOnly, g_guideChecked, g_guideMs, g_videoOff, g_videoOffChecked;
@@ -259,7 +267,7 @@ static u8  g_clusterInEp[EP_BYTES] __attribute__((aligned(8)));
 static u8  g_sdrBuf[8192];
 
 struct ClusterProbe {
-  u32 sdrSeen, sdrPatched, sdrLen, sdrMainVideo, sdrMainInput, sdrError, inMsgs, inLastId, setups, starts, stops, focusReq, cfgMsgs, frames, idr, other;
+  u32 sdrSeen, sdrPatched, sdrLen, sdrMainVideo, sdrMainInput, sdrError, mainDpiStock, mainDpi, inMsgs, inLastId, setups, starts, stops, focusReq, cfgMsgs, frames, idr, other;
   u32 sessionId, setupCodec, lastOtherId, bytes, maxAu, lastTsHi, lastTsLo, sent, sendFail;
   u32 cfgLen, prefixCount, spsCropped, focusChanges, bindReplies, bindReqLen, inputsSent, cmdSeq;
   u32 insetsFile, insets[4], cmdReads, cmdBytes, cmdLines, decodeMode, fullFrame;
@@ -328,6 +336,12 @@ static u8* cl_rewrite_service(u8* o,u8* end,const u8* sv,u32 sn){
     if(!cl_next(sv,sn,&i,&f,&wt,&fs,&pl,&pn)) return 0;
     if(f==3 && wt==2 && cl_get_u(pl,pn,1)==CL_CODEC_H264_BP && !cl_get_u(pl,pn,CLUSTER_FIELD_DISPLAY_TYPE)){
       u8 x[4]={(u8)(CLUSTER_FIELD_DISPLAY_ID<<3),0,(u8)(CLUSTER_FIELD_DISPLAY_TYPE<<3),0};
+      g_cl.mainDpiStock=sdr_density_of(pl,pn); g_cl.mainDpi=g_cl.mainDpiStock;
+      static u8 sink[512];
+      if(MAIN_DENSITY){                            // the head unit screen's density from Config
+        u32 sn2=sdr_set_density(pl,pn,sink,sizeof sink,MAIN_DENSITY);
+        if(sn2){ pl=sink; pn=sn2; g_cl.mainDpi=MAIN_DENSITY; }
+      }
       t=cl_ld(t,tmp+sizeof tmp,3,pl,pn,x,4); g_cl.sdrMainVideo++;
     } else if(f==4 && wt==2){
       u8 x[2]={(u8)(CLUSTER_FIELD_INPUT_DISPLAY_ID<<3),0};
@@ -521,7 +535,7 @@ static void cluster_flush(){
   cl_kv(o,"rd_state=",g_kv?g_kv->rd_state:0); cl_kv(o,"rd_ring_waits=",g_kv?g_kv->rd_ring_waits:0);
   cl_kv(o,"rd_ring_lost=",g_kv?g_kv->rd_ring_lost:0);
   cl_kv(o,"ack_pending=",g_ackPending); cl_kv(o,"ack_consumed=",g_cl.ackConsumed); cl_kv(o,"ack_timeouts=",g_cl.ackTimeouts);
-  cl_kv(o,"focus_gated=",g_cl.focusGated); cl_kv(o,"dhu=",g_cl.dhu); cl_kv(o,"kbps_cap=",CLUSTER_KBPS);
+  cl_kv(o,"focus_gated=",g_cl.focusGated); cl_kv(o,"dhu=",g_cl.dhu); cl_kv(o,"main_dpi_stock=",g_cl.mainDpiStock); cl_kv(o,"main_dpi=",g_cl.mainDpi); cl_kv(o,"cluster_dpi=",CLUSTER_DENSITY); cl_kv(o,"kbps_cap=",CLUSTER_KBPS);
   cl_kv(o,"frames=",g_cl.frames); cl_kv(o,"idr=",g_cl.idr); cl_kv(o,"bytes=",g_cl.bytes);
   cl_kv(o,"max_au=",g_cl.maxAu); cl_kv(o,"ts_hi=",g_cl.lastTsHi); cl_kv(o,"ts_lo=",g_cl.lastTsLo);
   cl_kv(o,"sent=",g_cl.sent); cl_kv(o,"send_fail=",g_cl.sendFail);

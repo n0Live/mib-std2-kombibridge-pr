@@ -117,6 +117,10 @@ ConfigurationServiceListener {
     }
 
     public void uninitialize() {
+        // the cluster left BAP (ignition off: it goes dark while the unit still runs): keep the
+        // insets template chosen on the wheel
+        de.aatokombi.ClusterVideo.log("ActiveRgType uninitialize (cluster off BAP)");
+        de.aatokombi.ClusterInsets.save("cluster off BAP");
         // navsd-shadow delta: a listener was only registered on a nav-capable cluster (see init).
         if (ClusterCaps.isNavCapable()) {
             try { this.getNavigationService().removeNavigationServiceListener(this, NAVIGATION_LISTENER_IDS); } catch (Throwable t) { de.aatokombi.Quiet.note("ActiveRgType#4", t); }

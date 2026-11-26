@@ -4,9 +4,11 @@ package de.aatokombi;
  * The insets template of Android Auto's map on the cluster (narrow / medium / wide), chosen on the
  * wheel (Config.ClusterMap.INSETS_KEY), and the default insets table.
  *
- * The libgal reads both files: /tsd/var/aatokombi/insets-template (the template's word) and the
- * table /tsd/var/aatokombi/app-insets, and sends the phone the line for the app on the cluster, the
- * template and the guidance state (shim/src/app_insets.h). The table of the build (app-insets.txt
+ * The libgal reads both files: TEMPLATE_FILE in RAM (the template's word) and the table
+ * /tsd/var/aatokombi/app-insets, and sends the phone the line for the app on the cluster, the
+ * template and the guidance state (shim/src/app_insets.h). A change on the wheel goes to RAM only;
+ * the flash copy SAVED_FILE is written by save(), when the cluster leaves BAP (ignition off: the
+ * cluster goes dark while the unit still runs) or the AA session ends. The table of the build (app-insets.txt
  * next to Config.java) is installed when the unit has none, or still has an earlier build's default
  * table (its first line is HEADER). Java 1.3 source; never throws.
  */
@@ -18,13 +20,18 @@ public final class ClusterInsets {
     public static final int WIDE = 2;
     private static final String[] NAMES = {"narrow", "medium", "wide"};
 
-    static final String TEMPLATE_FILE = "/tsd/var/aatokombi/insets-template";
+    /** The template now, read by the libgal (RAM). */
+    static final String TEMPLATE_FILE = "/dev/shmem/aa_insets_template";
+    /** The template kept for the next start (flash). */
+    static final String SAVED_FILE = "/tsd/var/aatokombi/insets-template";
     static final String TABLE_FILE = "/tsd/var/aatokombi/app-insets";
     /** The first line of a default table: a table that still starts with it is replaced by the build's. */
     static final String HEADER = "# AAtoKombi default table";
 
     private static int current = -1;
     private static boolean installed;
+    /** The template in SAVED_FILE as last read or written; -1 none. */
+    private static int saved = -2;
 
     /** The template's word, as the table and the template file have it. */
     public static String name(int t) {
@@ -41,13 +48,40 @@ public final class ClusterInsets {
         return -1;
     }
 
-    /** The template now: the file, else Config.ClusterMap.INSETS_TEMPLATE. */
+    /**
+     * The template now: the RAM file (after an HMI restart), else the saved one, else
+     * Config.ClusterMap.INSETS_TEMPLATE.
+     */
     public static synchronized int current() {
         if (current < 0) {
             int t = parse(read(TEMPLATE_FILE));
+            if (t < 0) t = savedTemplate();
             current = t >= 0 ? t : clamp(Config.ClusterMap.INSETS_TEMPLATE);
         }
         return current;
+    }
+
+    private static int savedTemplate() {
+        if (saved == -2) saved = parse(read(SAVED_FILE));
+        return saved;
+    }
+
+    /** Whether save() has to write: the template differs from the saved one. */
+    static boolean needsSave(int now, int savedNow) {
+        return now >= 0 && now != savedNow;
+    }
+
+    /** The template into flash, when it differs from the saved one; why = for the log. */
+    public static synchronized void save(String why) {
+        try {
+            if (current < 0) return;                    // never chosen nor read: nothing to keep
+            if (!needsSave(current, savedTemplate())) return;
+            write(SAVED_FILE, name(current) + "\n");
+            saved = current;
+            ClusterVideo.log("insets template saved: " + name(current) + " (" + why + ")");
+        } catch (Throwable t) {
+            Quiet.note("ClusterInsets#2", t);
+        }
     }
 
     /** One template wider (+1) or narrower (-1); stops at narrow and wide. */
@@ -82,8 +116,8 @@ public final class ClusterInsets {
     }
 
     /**
-     * Once per HMI start: the build's table onto the unit when replaceTable allows, and the template
-     * file when there is none (the libgal needs a template to pick a line).
+     * Once per HMI start: the build's table onto the unit when replaceTable allows, and the RAM
+     * template file when there is none.
      */
     public static synchronized void install() {
         if (installed) return;
@@ -98,7 +132,7 @@ public final class ClusterInsets {
                 ClusterVideo.log("insets table: the unit's own (no default header), kept");
             }
             if (parse(read(TEMPLATE_FILE)) < 0) {
-                write(TEMPLATE_FILE, name(current()) + "\n");
+                write(TEMPLATE_FILE, name(current()) + "\n");   // RAM: the libgal needs a template
             }
         } catch (Throwable t) {
             Quiet.note("ClusterInsets#1", t);

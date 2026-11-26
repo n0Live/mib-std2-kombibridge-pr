@@ -1007,7 +1007,7 @@ static void cl_send_live_insets(const u32* v){
 // values).
 #define CLUSTER_NAV_APP_FILE    "/dev/shmem/aa_nav_app"
 #define CLUSTER_APP_INSETS_FILE "/tsd/var/aatokombi/app-insets"
-#define CLUSTER_TEMPLATE_FILE   "/tsd/var/aatokombi/insets-template"
+#define CLUSTER_TEMPLATE_FILE   "/dev/shmem/aa_insets_template"   // RAM; the jar keeps a flash copy
 // Config.ClusterMap.HIDE_AA_GUIDANCE_CARD (-DCLUSTER_HIDE_AA_CARD=1): during route guidance these side
 // insets leave the app 1 px of width (1280 - 639 - 640), so it draws no guidance card.
 #define CLUSTER_NO_CARD_LEFT    639u

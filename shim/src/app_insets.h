@@ -12,7 +12,7 @@
 //   default  150 260 470 470      (any app without a line of its own; optional)
 // The numbers are top bottom left right, in pixels of the phone's 1280x720 frame, the same as the
 // insets files. Yandex Navigator and Yango are both "yandex". Templates and guidance lines: see
-// appins_lookup_tpl; the template chosen on the wheel is in /tsd/var/aatokombi/insets-template.
+// appins_lookup_tpl; the template chosen on the wheel is in /dev/shmem/aa_insets_template.
 #ifndef APP_INSETS_H
 #define APP_INSETS_H
 

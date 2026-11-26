@@ -120,6 +120,10 @@ public final class ModStateTest {
         ok("wider than wide: stays", ClusterInsets.current() == ClusterInsets.WIDE);
         ClusterInsets.next();
         ok("next after wide: narrow", ClusterInsets.current() == ClusterInsets.NARROW);
+        ok("save: a new template is written", ClusterInsets.needsSave(ClusterInsets.WIDE, ClusterInsets.NARROW));
+        ok("save: nothing saved yet", ClusterInsets.needsSave(ClusterInsets.NARROW, -1));
+        ok("save: the same as saved: no write", !ClusterInsets.needsSave(ClusterInsets.MEDIUM, ClusterInsets.MEDIUM));
+        ok("save: no template: no write", !ClusterInsets.needsSave(-1, ClusterInsets.MEDIUM));
     }
 
     private static void modeKey() {

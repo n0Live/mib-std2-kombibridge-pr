@@ -310,6 +310,7 @@ public final class ClusterVideo {
                 }
             } else {
                 sendCommand("rep 0 0");
+                ClusterInsets.save("AA session closed");
             }
         }
         KombiMap.phoneVideo(alive);

@@ -133,7 +133,8 @@ google    150 260 470 470                   # no template: for all three
 ```
 
 - The template (narrow / medium / wide) is chosen on the AA map with `Config.ClusterMap.INSETS_KEY`
-  (zoom or OK) and kept in `/tsd/var/aatokombi/insets-template`. The most specific line wins
+  (zoom or OK) and kept in `/dev/shmem/aa_insets_template`; the jar saves it to
+  `/tsd/var/aatokombi/insets-template` when the cluster goes off (ignition off) or the AA session ends. The most specific line wins
   (template, then `guide`); the app's lines win over the `default` lines, which are also used
   before the app is recognised. Guidance = the phone's navigation status ACTIVE or REROUTING.
 - `Config.ClusterMap.HIDE_AA_GUIDANCE_CARD` (a build switch): during guidance the side insets are

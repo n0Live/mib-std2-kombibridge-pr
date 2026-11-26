@@ -217,7 +217,9 @@ public final class Config {
 
         /**
          * While Android Auto's map is on the AID, the cluster's plate above the map stays empty: no
-         * street (BAP TurnToInfo) and no ETA line (DistanceToDestination / TimeToDestination). The
+         * street (BAP TurnToInfo), no ETA line (DistanceToDestination / TimeToDestination) and no
+         * lane row (LaneGuidance: one function for the map and the turn widget, so the turn widget
+         * has no lanes then either; the media widget's text lane row stays). The
          * phone draws its own, and the map gets the plate's space: the phone is given the content
          * insets 150 260 470 470 (top bottom left right) instead of 180 260 500 500.
          * Trade-off: the turn widget shows the street only under the FOLLOW_STREET arrow (it then

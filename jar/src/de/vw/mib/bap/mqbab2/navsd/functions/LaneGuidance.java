@@ -250,6 +250,12 @@ NavigationServiceListener {
     /** The Android Auto source for the list above. */
     private void computeFromAndroidAuto(LaneGuidance_ChangedArray laneGuidance_ChangedArray) {
         BAPArrayData bAPArrayData = laneGuidance_ChangedArray.getArrayData();
+        if (Config.ClusterMap.HIDE_PLATE_ON_AA_MAP && de.aatokombi.KombiMap.aaMapShown()) {
+            // the phone draws its own lanes on the AA map; the cluster's lane row would sit on top of
+            // it. It is one BAP function for the map and the turn widget, so it is off in both.
+            laneGuidance_ChangedArray.laneGuidanceOnOff = 0;
+            return;
+        }
         NavState.LaneState laneState = NavState.laneState; // one volatile read: primary + all directions
         int[] lanes = laneState.lanes;
         int total = (lanes != null && lanes.length > 0) ? lanes[0] : 0;
